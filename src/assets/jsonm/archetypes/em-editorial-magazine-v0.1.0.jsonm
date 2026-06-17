@@ -1,0 +1,298 @@
+{
+  "schemaVersion": "1",
+  "format": "JSONM",
+  "kind": "named",
+  "id": "em",
+  "name": "Editorial Magazine",
+  "description": "Editorial, considered, grid-disciplined. White canvas with black text, a high-contrast accent pair, a four-role typography system pairing serif display with humanist sans UI, razor-sharp radii, and structure carried entirely by typographic hierarchy and hard rules. For publications, long-form editorial sites, and thought-leadership platforms where reading is the primary experience.",
+  "corpus": {
+    "id": "activetwist-design-corpus/v1",
+    "version": "apollo-v0.1.0",
+    "canonical": true,
+    "sourceFiles": [
+      "app/tokens.css",
+      "app/runtime-fonts.css",
+      "app/runtime-token-overrides.css"
+    ]
+  },
+  "settings": {
+    "wcagPolicy": "AA",
+    "appearanceModes": [
+      "light",
+      "dark"
+    ],
+    "systemFollow": false,
+    "defaultMode": "light"
+  },
+  "tokens": {
+    "space": {
+      "scale": {
+        "s0": "0px",
+        "s0_5": "4px",
+        "s1": "8px",
+        "s1_5": "12px",
+        "s2": "16px",
+        "s3": "24px",
+        "s4": "32px",
+        "s5": "40px",
+        "s6": "48px",
+        "s7": "56px",
+        "s8": "64px",
+        "s9": "72px",
+        "s10": "80px",
+        "s12": "96px"
+      },
+      "aliases": {
+        "none": "s0",
+        "xs": "s0_5",
+        "sm": "s1",
+        "md": "s2",
+        "lg": "s3",
+        "xl": "s4",
+        "2xl": "s6"
+      }
+    },
+    "size": {
+      "control": {
+        "sm": "32px",
+        "md": "40px",
+        "lg": "48px"
+      },
+      "icon": {
+        "sm": "16px",
+        "md": "20px",
+        "lg": "24px"
+      },
+      "hitTargetMin": "40px"
+    },
+    "radius": {
+      "scale": {
+        "r0": "0px",
+        "r0_5": "0px",
+        "r1": "0px",
+        "r2": "4px"
+      },
+      "aliases": {
+        "none": "r0",
+        "sm": "r0_5",
+        "md": "r1",
+        "lg": "r2"
+      },
+      "pill": "9999px"
+    },
+    "border": {
+      "hairline": "1px",
+      "thin": "2px",
+      "heavy": "3px"
+    },
+    "typography": {
+      "families": {
+        "displaySerif": "\"Fraunces\", Georgia, \"Times New Roman\", serif",
+        "bodySerif": "\"Source Serif 4\", Georgia, \"Times New Roman\", serif",
+        "sans": "\"Inter\", system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "mono": "\"IBM Plex Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace"
+      },
+      "weights": {
+        "regular": 400,
+        "medium": 500,
+        "semibold": 600,
+        "bold": 700
+      },
+      "sizes": {
+        "xs": "11px",
+        "sm": "14px",
+        "md": "16px",
+        "lg": "18px",
+        "xl": "20px",
+        "2xl": "24px",
+        "3xl": "32px"
+      },
+      "lineHeights": {
+        "tight": 1.05,
+        "normal": 1.55,
+        "loose": 1.75
+      },
+      "tracking": {
+        "normal": "0em",
+        "tight": "-0.02em",
+        "wide": "0.02em",
+        "label": "0.08em"
+      }
+    },
+    "color": {
+      "semantic": {
+        "light": {
+          "bg": "#ffffff",
+          "surface": "#ffffff",
+          "surfaceAlt": "#f5f5f0",
+          "text": "#000000",
+          "textMuted": "#404040",
+          "border": "#000000",
+          "borderStrong": "#000000",
+          "focus": "#22c55e",
+          "link": "#000000",
+          "linkHover": "#22c55e",
+          "accent": "#22c55e",
+          "accentText": "#000000",
+          "accentSecondary": "#8b5cf6",
+          "accentSecondaryText": "#ffffff",
+          "danger": "#dc2626",
+          "dangerText": "#ffffff",
+          "success": "#16a34a",
+          "successText": "#000000",
+          "warning": "#ca8a04",
+          "warningText": "#000000"
+        },
+        "dark": {
+          "bg": "#0a0a0a",
+          "surface": "#131313",
+          "surfaceAlt": "#1c1c1c",
+          "text": "#f5f5f0",
+          "textMuted": "rgba(245,245,240,0.55)",
+          "border": "rgba(245,245,240,0.12)",
+          "borderStrong": "rgba(245,245,240,0.25)",
+          "focus": "#22c55e",
+          "link": "#f5f5f0",
+          "linkHover": "#22c55e",
+          "accent": "#22c55e",
+          "accentText": "#0a0a0a",
+          "danger": "#dc2626",
+          "dangerText": "#ffffff",
+          "success": "#15803d",
+          "successText": "#ffffff",
+          "warning": "#fbbf24",
+          "warningText": "#0a0a0a"
+        }
+      },
+      "derived": {
+        "linkSurfaceSubtle": "rgba(34, 197, 94, 0.08)",
+        "linkSurfaceSoft": "rgba(34, 197, 94, 0.14)",
+        "linkSurfaceSoftStrong": "rgba(34, 197, 94, 0.20)",
+        "linkBorderSoft": "rgba(34, 197, 94, 0.40)",
+        "successSurfaceSubtle": "rgba(22, 163, 74, 0.06)",
+        "successSurfaceSoft": "rgba(22, 163, 74, 0.10)",
+        "successSurfaceSoftStrong": "rgba(22, 163, 74, 0.14)",
+        "successBorderSoft": "rgba(22, 163, 74, 0.30)",
+        "successBorderSoftStrong": "rgba(22, 163, 74, 0.40)",
+        "warningSurfaceSoft": "rgba(202, 138, 4, 0.10)",
+        "warningSurfaceSoftStrong": "rgba(202, 138, 4, 0.14)",
+        "warningBorderSoft": "rgba(202, 138, 4, 0.30)",
+        "warningBorderSoftStrong": "rgba(202, 138, 4, 0.40)",
+        "dangerSurfaceSubtle": "rgba(220, 38, 38, 0.06)",
+        "dangerSurfaceSoft": "rgba(220, 38, 38, 0.10)",
+        "dangerSurfaceSoftStrong": "rgba(220, 38, 38, 0.14)",
+        "dangerBorderSoft": "rgba(220, 38, 38, 0.30)",
+        "dangerBorderSoftStrong": "rgba(220, 38, 38, 0.40)",
+        "accentSurfaceSubtlest": "rgba(34, 197, 94, 0.04)",
+        "accentSurfaceSubtle": "rgba(34, 197, 94, 0.06)",
+        "accentSurfaceSoft": "rgba(34, 197, 94, 0.10)",
+        "accentSurfaceEmphasis": "rgba(34, 197, 94, 0.14)",
+        "accentBorderSoft": "rgba(34, 197, 94, 0.30)",
+        "accentSecondarySurfaceSoft": "rgba(139, 92, 246, 0.10)",
+        "accentSecondaryBorderSoft": "rgba(139, 92, 246, 0.30)",
+        "textOverlay": "#000000aa",
+        "dangerHover": "#b91c1c"
+      }
+    },
+    "shadow": {
+      "none": "none",
+      "sm": "none",
+      "md": "none"
+    },
+    "motion": {
+      "duration": {
+        "none": "0ms",
+        "fast": "120ms",
+        "normal": "180ms"
+      },
+      "easing": {
+        "standard": "cubic-bezier(0.2, 0, 0, 1)"
+      }
+    },
+    "layout": {
+      "containers": {
+        "sm": "720px",
+        "md": "960px",
+        "lg": "1120px"
+      },
+      "gutters": {
+        "sm": "16px",
+        "md": "24px",
+        "lg": "32px"
+      },
+      "breakpoints": {
+        "sm": "640px",
+        "md": "960px",
+        "lg": "1200px"
+      },
+      "widthModes": {
+        "page": {
+          "mode": "contained",
+          "container": "lg"
+        },
+        "section": {
+          "mode": "contained",
+          "container": "lg"
+        }
+      }
+    },
+    "focus": {
+      "ringWidth": "2px",
+      "ringOffset": "2px",
+      "outlineStyle": "solid"
+    },
+    "zIndex": {
+      "base": 0,
+      "dropdown": 10,
+      "overlay": 20,
+      "modal": 30,
+      "toast": 40
+    }
+  },
+  "fontRoles": {
+    "googleFontsCss2Url": "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap",
+    "roles": {
+      "headlines": {
+        "family": "Fraunces",
+        "fallback": "Georgia, \"Times New Roman\", serif",
+        "weight": 600,
+        "style": "normal",
+        "size": "72px",
+        "tracking": "-0.02em",
+        "fontVariationSettings": "'opsz' 144"
+      },
+      "subtitles": {
+        "family": "Fraunces",
+        "fallback": "Georgia, \"Times New Roman\", serif",
+        "weight": 500,
+        "style": "normal",
+        "size": "32px",
+        "fontVariationSettings": "'opsz' 48"
+      },
+      "body": {
+        "family": "Source Serif 4",
+        "fallback": "Georgia, \"Times New Roman\", serif",
+        "weight": 400,
+        "style": "normal",
+        "size": "18px",
+        "fontVariationSettings": "'opsz' 18"
+      },
+      "ui": {
+        "family": "Inter",
+        "fallback": "system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "weight": 500,
+        "style": "normal",
+        "size": "14px"
+      },
+      "micro": {
+        "family": "IBM Plex Mono",
+        "fallback": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+        "weight": 500,
+        "style": "normal",
+        "size": "11px",
+        "textTransform": "uppercase",
+        "tracking": "0.12em"
+      }
+    }
+  }
+}

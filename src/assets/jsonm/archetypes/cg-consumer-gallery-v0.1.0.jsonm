@@ -1,0 +1,289 @@
+{
+  "schemaVersion": "1",
+  "format": "JSONM",
+  "kind": "named",
+  "id": "cg",
+  "name": "Consumer Gallery",
+  "description": "Friendly, premium, photography-forward. White canvas with dark slate text and a singular overridable brand color, geometric-humanist typography, generous radii with pill buttons, and a multi-layer shadow recipe. For marketplaces, consumer apps, and image-forward products where the visual content is the primary draw.",
+  "corpus": {
+    "id": "activetwist-design-corpus/v1",
+    "version": "apollo-v0.1.0",
+    "canonical": true,
+    "sourceFiles": [
+      "app/tokens.css",
+      "app/runtime-fonts.css",
+      "app/runtime-token-overrides.css"
+    ]
+  },
+  "settings": {
+    "wcagPolicy": "AA",
+    "appearanceModes": [
+      "light",
+      "dark"
+    ],
+    "systemFollow": false,
+    "defaultMode": "light"
+  },
+  "tokens": {
+    "space": {
+      "scale": {
+        "s0": "0px",
+        "s0_5": "4px",
+        "s1": "8px",
+        "s1_5": "12px",
+        "s2": "16px",
+        "s3": "24px",
+        "s4": "32px",
+        "s5": "40px",
+        "s6": "48px",
+        "s7": "56px",
+        "s8": "64px",
+        "s9": "72px",
+        "s10": "80px",
+        "s12": "96px"
+      },
+      "aliases": {
+        "none": "s0",
+        "xs": "s0_5",
+        "sm": "s1",
+        "md": "s2",
+        "lg": "s3",
+        "xl": "s4",
+        "2xl": "s6"
+      }
+    },
+    "size": {
+      "control": {
+        "sm": "32px",
+        "md": "40px",
+        "lg": "48px"
+      },
+      "icon": {
+        "sm": "16px",
+        "md": "20px",
+        "lg": "24px"
+      },
+      "hitTargetMin": "40px"
+    },
+    "radius": {
+      "scale": {
+        "r0": "0px",
+        "r0_5": "8px",
+        "r1": "12px",
+        "r2": "20px"
+      },
+      "aliases": {
+        "none": "r0",
+        "sm": "r0_5",
+        "md": "r1",
+        "lg": "r2"
+      },
+      "pill": "9999px"
+    },
+    "border": {
+      "hairline": "1px",
+      "thin": "2px"
+    },
+    "typography": {
+      "families": {
+        "sans": "\"Manrope\", system-ui, -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"Segoe UI\", Roboto, Arial, sans-serif",
+        "mono": "\"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace"
+      },
+      "weights": {
+        "regular": 400,
+        "medium": 500,
+        "semibold": 600,
+        "bold": 700,
+        "heavy": 800
+      },
+      "sizes": {
+        "xs": "12px",
+        "sm": "14px",
+        "md": "16px",
+        "lg": "18px",
+        "xl": "20px",
+        "2xl": "24px",
+        "3xl": "32px"
+      },
+      "lineHeights": {
+        "tight": 1.1,
+        "normal": 1.5,
+        "loose": 1.7
+      },
+      "tracking": {
+        "normal": "0em",
+        "tight": "-0.02em",
+        "wide": "0.02em"
+      }
+    },
+    "color": {
+      "semantic": {
+        "light": {
+          "bg": "#ffffff",
+          "surface": "#ffffff",
+          "surfaceAlt": "#fafafa",
+          "text": "#1d1d1f",
+          "textMuted": "#6a6a70",
+          "border": "#e5e5e7",
+          "borderStrong": "#c7c7cc",
+          "focus": "#d72a4a",
+          "link": "#ff385c",
+          "linkHover": "#d72a4a",
+          "accent": "#d72a4a",
+          "accentText": "#ffffff",
+          "danger": "#c13515",
+          "dangerText": "#ffffff",
+          "success": "#008a05",
+          "successText": "#ffffff",
+          "warning": "#cc8800",
+          "warningText": "#1d1d1f"
+        },
+        "dark": {
+          "bg": "#0f0f0f",
+          "surface": "#1a1a1a",
+          "surfaceAlt": "#242424",
+          "text": "#f5f5f7",
+          "textMuted": "rgba(245,245,247,0.55)",
+          "border": "rgba(245,245,247,0.10)",
+          "borderStrong": "rgba(245,245,247,0.22)",
+          "focus": "#ff6080",
+          "link": "#ff6080",
+          "linkHover": "#ff8a9e",
+          "accent": "#d72a4a",
+          "accentText": "#ffffff",
+          "danger": "#dc2626",
+          "dangerText": "#ffffff",
+          "success": "#15803d",
+          "successText": "#ffffff",
+          "warning": "#fbbf24",
+          "warningText": "#0f0f0f"
+        }
+      },
+      "derived": {
+        "linkSurfaceSubtle": "rgba(255, 56, 92, 0.06)",
+        "linkSurfaceSoft": "rgba(255, 56, 92, 0.10)",
+        "linkSurfaceSoftStrong": "rgba(255, 56, 92, 0.14)",
+        "linkBorderSoft": "rgba(255, 56, 92, 0.30)",
+        "successSurfaceSubtle": "rgba(0, 138, 5, 0.06)",
+        "successSurfaceSoft": "rgba(0, 138, 5, 0.10)",
+        "successSurfaceSoftStrong": "rgba(0, 138, 5, 0.14)",
+        "successBorderSoft": "rgba(0, 138, 5, 0.30)",
+        "successBorderSoftStrong": "rgba(0, 138, 5, 0.40)",
+        "warningSurfaceSoft": "rgba(204, 136, 0, 0.10)",
+        "warningSurfaceSoftStrong": "rgba(204, 136, 0, 0.14)",
+        "warningBorderSoft": "rgba(204, 136, 0, 0.30)",
+        "warningBorderSoftStrong": "rgba(204, 136, 0, 0.40)",
+        "dangerSurfaceSubtle": "rgba(193, 53, 21, 0.06)",
+        "dangerSurfaceSoft": "rgba(193, 53, 21, 0.10)",
+        "dangerSurfaceSoftStrong": "rgba(193, 53, 21, 0.14)",
+        "dangerBorderSoft": "rgba(193, 53, 21, 0.30)",
+        "dangerBorderSoftStrong": "rgba(193, 53, 21, 0.40)",
+        "accentSurfaceSubtlest": "rgba(255, 56, 92, 0.04)",
+        "accentSurfaceSubtle": "rgba(255, 56, 92, 0.06)",
+        "accentSurfaceSoft": "rgba(255, 56, 92, 0.10)",
+        "accentSurfaceEmphasis": "rgba(255, 56, 92, 0.14)",
+        "accentBorderSoft": "rgba(255, 56, 92, 0.28)",
+        "textOverlay": "#1d1d1f99",
+        "dangerHover": "#9e2a10"
+      }
+    },
+    "shadow": {
+      "none": "none",
+      "sm": "0 0 0 1px rgba(0, 0, 0, 0.08)",
+      "md": "0 0 0 1px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04), 0 6px 16px rgba(0, 0, 0, 0.08)"
+    },
+    "motion": {
+      "duration": {
+        "none": "0ms",
+        "fast": "120ms",
+        "normal": "180ms"
+      },
+      "easing": {
+        "standard": "cubic-bezier(0.2, 0, 0, 1)",
+        "spring": "cubic-bezier(0.34, 1.56, 0.64, 1)"
+      }
+    },
+    "layout": {
+      "containers": {
+        "sm": "720px",
+        "md": "960px",
+        "lg": "1120px"
+      },
+      "gutters": {
+        "sm": "16px",
+        "md": "24px",
+        "lg": "32px"
+      },
+      "breakpoints": {
+        "sm": "640px",
+        "md": "960px",
+        "lg": "1200px"
+      },
+      "widthModes": {
+        "page": {
+          "mode": "contained",
+          "container": "lg"
+        },
+        "section": {
+          "mode": "contained",
+          "container": "lg"
+        }
+      }
+    },
+    "focus": {
+      "ringWidth": "2px",
+      "ringOffset": "2px",
+      "outlineStyle": "solid"
+    },
+    "zIndex": {
+      "base": 0,
+      "dropdown": 10,
+      "overlay": 20,
+      "modal": 30,
+      "toast": 40
+    }
+  },
+  "fontRoles": {
+    "googleFontsCss2Url": "https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap",
+    "roles": {
+      "headlines": {
+        "family": "Manrope",
+        "fallback": "system-ui, -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"Segoe UI\", Roboto, Arial, sans-serif",
+        "weight": 700,
+        "style": "normal",
+        "size": "64px",
+        "tracking": "-0.02em"
+      },
+      "subtitles": {
+        "family": "Manrope",
+        "fallback": "system-ui, -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"Segoe UI\", Roboto, Arial, sans-serif",
+        "weight": 600,
+        "style": "normal",
+        "size": "24px"
+      },
+      "body": {
+        "family": "Manrope",
+        "fallback": "system-ui, -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"Segoe UI\", Roboto, Arial, sans-serif",
+        "weight": 400,
+        "style": "normal",
+        "size": "16px"
+      },
+      "ui": {
+        "family": "Manrope",
+        "fallback": "system-ui, -apple-system, BlinkMacSystemFont, \"SF Pro Text\", \"Segoe UI\", Roboto, Arial, sans-serif",
+        "weight": 500,
+        "style": "normal",
+        "size": "14px"
+      },
+      "micro": {
+        "family": "JetBrains Mono",
+        "fallback": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+        "weight": 500,
+        "style": "normal",
+        "size": "12px",
+        "textTransform": "uppercase",
+        "tracking": "0.08em"
+      }
+    }
+  }
+}

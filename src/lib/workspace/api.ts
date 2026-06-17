@@ -1,0 +1,92 @@
+import { invoke } from "@tauri-apps/api/core";
+import { open } from "@tauri-apps/plugin-dialog";
+import type { WorkspaceFolderInspection } from "./projectDetection";
+import type { WorkspaceEntry } from "./types";
+
+export interface SelectedImageAsset {
+  relativePath: string;
+}
+
+export async function selectWorkspaceDirectory(title = "Open Onyx Workspace"): Promise<string | null> {
+  if (!isTauriRuntime()) return null;
+  const selected = await open({ directory: true, multiple: false, title });
+  return typeof selected === "string" ? selected : null;
+}
+
+export async function listWorkspace(root: string): Promise<WorkspaceEntry> {
+  return invoke<WorkspaceEntry>("list_workspace", { root });
+}
+
+export async function directoryHasEntries(root: string): Promise<boolean> {
+  if (!isTauriRuntime()) return false;
+  return invoke<boolean>("directory_has_entries", { root });
+}
+
+export async function inspectWorkspaceFolder(root: string): Promise<WorkspaceFolderInspection | null> {
+  if (!isTauriRuntime()) return null;
+  const inspection = await invoke<{
+    path: string;
+    name: string;
+    entries: string[];
+    project_markers: string[];
+    okf_markers: string[];
+    has_markdown: boolean;
+  }>("inspect_workspace_folder", { root });
+  return {
+    path: inspection.path,
+    name: inspection.name,
+    entries: inspection.entries,
+    projectMarkers: inspection.project_markers,
+    okfMarkers: inspection.okf_markers,
+    hasMarkdown: inspection.has_markdown,
+  };
+}
+
+export async function readWorkspaceFile(root: string, relativePath: string): Promise<string> {
+  return invoke<string>("read_text_file", { root, relativePath });
+}
+
+export async function writeWorkspaceFile(root: string, relativePath: string, contents: string): Promise<void> {
+  await invoke("write_text_file", { root, relativePath, contents });
+}
+
+export async function createWorkspaceFolder(root: string, relativePath: string): Promise<void> {
+  await invoke("create_folder", { root, relativePath });
+}
+
+export async function createWorkspaceMarkdownFile(root: string, relativePath: string, contents: string): Promise<void> {
+  await invoke("create_markdown_file", { root, relativePath, contents });
+}
+
+export async function initializeWorkspace(root: string, title: string): Promise<void> {
+  await invoke("initialize_workspace", { root, title });
+}
+
+export async function selectAndImportDrawerImage(root: string): Promise<SelectedImageAsset | null> {
+  if (!isTauriRuntime()) return null;
+  const selected = await open({
+    directory: false,
+    multiple: false,
+    title: "Insert Image",
+    filters: [{ name: "Images", extensions: ["png", "jpg", "jpeg", "gif", "webp", "svg"] }],
+  });
+  if (typeof selected !== "string") return null;
+  const relativePath = await invoke<string>("import_image_asset", { root, sourcePath: selected });
+  return { relativePath };
+}
+
+export async function renameWorkspacePath(root: string, relativePath: string, newName: string): Promise<string> {
+  return invoke<string>("rename_path", { root, relativePath, newName });
+}
+
+export async function moveWorkspacePath(root: string, relativePath: string, destinationPath: string): Promise<void> {
+  await invoke("move_path", { root, relativePath, destinationPath });
+}
+
+export async function deleteWorkspacePath(root: string, relativePath: string): Promise<void> {
+  await invoke("delete_path", { root, relativePath });
+}
+
+export function isTauriRuntime(): boolean {
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
+}

@@ -1,0 +1,295 @@
+{
+  "schemaVersion": "1",
+  "format": "JSONM",
+  "kind": "named",
+  "id": "dt",
+  "name": "Dev Terminal",
+  "description": "Technical, confident, crafted. Near-black canvas with near-white text and a single saturated accent, monospace-forward typography, functional-soft radii, and a luminance-stacking depth philosophy. For developer tools, technical documentation, and software products where precision and craft signal competence.",
+  "corpus": {
+    "id": "activetwist-design-corpus/v1",
+    "version": "apollo-v0.1.0",
+    "canonical": true,
+    "sourceFiles": [
+      "app/tokens.css",
+      "app/runtime-fonts.css",
+      "app/runtime-token-overrides.css"
+    ]
+  },
+  "settings": {
+    "wcagPolicy": "AA",
+    "appearanceModes": [
+      "light",
+      "dark"
+    ],
+    "systemFollow": false,
+    "defaultMode": "dark"
+  },
+  "tokens": {
+    "space": {
+      "scale": {
+        "s0": "0px",
+        "s0_5": "4px",
+        "s1": "8px",
+        "s1_5": "12px",
+        "s2": "16px",
+        "s3": "24px",
+        "s4": "32px",
+        "s5": "40px",
+        "s6": "48px",
+        "s7": "56px",
+        "s8": "64px",
+        "s9": "72px",
+        "s10": "80px",
+        "s12": "96px"
+      },
+      "aliases": {
+        "none": "s0",
+        "xs": "s0_5",
+        "sm": "s1",
+        "md": "s2",
+        "lg": "s3",
+        "xl": "s4",
+        "2xl": "s6"
+      }
+    },
+    "size": {
+      "control": {
+        "sm": "32px",
+        "md": "40px",
+        "lg": "48px"
+      },
+      "icon": {
+        "sm": "16px",
+        "md": "20px",
+        "lg": "24px"
+      },
+      "hitTargetMin": "40px"
+    },
+    "radius": {
+      "scale": {
+        "r0": "0px",
+        "r0_5": "4px",
+        "r1": "8px",
+        "r2": "8px"
+      },
+      "aliases": {
+        "none": "r0",
+        "sm": "r0_5",
+        "md": "r1",
+        "lg": "r2"
+      },
+      "pill": "9999px"
+    },
+    "border": {
+      "hairline": "1px",
+      "thin": "2px"
+    },
+    "typography": {
+      "families": {
+        "sans": "\"Inter\", system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "mono": "\"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace"
+      },
+      "weights": {
+        "regular": 400,
+        "medium": 500,
+        "emphasis": 510,
+        "semibold": 600,
+        "bold": 700
+      },
+      "sizes": {
+        "xs": "12px",
+        "sm": "14px",
+        "md": "16px",
+        "lg": "18px",
+        "xl": "20px",
+        "2xl": "24px",
+        "3xl": "32px"
+      },
+      "lineHeights": {
+        "tight": 1.1,
+        "normal": 1.5,
+        "loose": 1.7
+      },
+      "tracking": {
+        "normal": "-0.01em",
+        "tight": "-0.02em",
+        "wide": "0.02em"
+      }
+    },
+    "color": {
+      "semantic": {
+        "light": {
+          "bg": "#f3f4f6",
+          "surface": "#ffffff",
+          "surfaceAlt": "#e8eaed",
+          "text": "#1f2937",
+          "textMuted": "rgba(31,41,55,0.55)",
+          "border": "rgba(31,41,55,0.12)",
+          "borderStrong": "rgba(31,41,55,0.25)",
+          "focus": "#4c51bf",
+          "link": "#4c51bf",
+          "linkHover": "#3730a3",
+          "accent": "#4c51bf",
+          "accentText": "#ffffff",
+          "danger": "#dc2626",
+          "dangerText": "#ffffff",
+          "success": "#16a34a",
+          "successText": "#0a0a0a",
+          "warning": "#d97706",
+          "warningText": "#0a0a0a"
+        },
+        "dark": {
+          "bg": "#08090a",
+          "surface": "#0f1011",
+          "surfaceAlt": "#151618",
+          "text": "#f7f8f8",
+          "textMuted": "rgba(247, 248, 248, 0.64)",
+          "border": "rgba(247, 248, 248, 0.08)",
+          "borderStrong": "rgba(247, 248, 248, 0.16)",
+          "focus": "#5e6ad2",
+          "link": "#8591e0",
+          "linkHover": "#a2abea",
+          "accent": "#5e6ad2",
+          "accentText": "#ffffff",
+          "danger": "#dc2626",
+          "dangerText": "#ffffff",
+          "success": "#15803d",
+          "successText": "#ffffff",
+          "warning": "#eab308",
+          "warningText": "#0a0a0a"
+        }
+      },
+      "derived": {
+        "linkSurfaceSubtle": "rgba(94, 106, 210, 0.08)",
+        "linkSurfaceSoft": "rgba(94, 106, 210, 0.14)",
+        "linkSurfaceSoftStrong": "rgba(94, 106, 210, 0.20)",
+        "linkBorderSoft": "rgba(94, 106, 210, 0.40)",
+        "successSurfaceSubtle": "rgba(34, 197, 94, 0.08)",
+        "successSurfaceSoft": "rgba(34, 197, 94, 0.14)",
+        "successSurfaceSoftStrong": "rgba(34, 197, 94, 0.20)",
+        "successBorderSoft": "rgba(34, 197, 94, 0.40)",
+        "successBorderSoftStrong": "rgba(34, 197, 94, 0.50)",
+        "warningSurfaceSoft": "rgba(234, 179, 8, 0.14)",
+        "warningSurfaceSoftStrong": "rgba(234, 179, 8, 0.20)",
+        "warningBorderSoft": "rgba(234, 179, 8, 0.40)",
+        "warningBorderSoftStrong": "rgba(234, 179, 8, 0.50)",
+        "dangerSurfaceSubtle": "rgba(239, 68, 68, 0.08)",
+        "dangerSurfaceSoft": "rgba(239, 68, 68, 0.14)",
+        "dangerSurfaceSoftStrong": "rgba(239, 68, 68, 0.20)",
+        "dangerBorderSoft": "rgba(239, 68, 68, 0.40)",
+        "dangerBorderSoftStrong": "rgba(239, 68, 68, 0.50)",
+        "accentSurfaceSubtlest": "rgba(94, 106, 210, 0.06)",
+        "accentSurfaceSubtle": "rgba(94, 106, 210, 0.10)",
+        "accentSurfaceSoft": "rgba(94, 106, 210, 0.16)",
+        "accentSurfaceEmphasis": "rgba(94, 106, 210, 0.22)",
+        "accentBorderSoft": "rgba(94, 106, 210, 0.40)",
+        "textOverlay": "rgba(247, 248, 248, 0.80)",
+        "dangerHover": "#d32f2f"
+      }
+    },
+    "shadow": {
+      "none": "none",
+      "sm": "0 0 0 1px rgba(247, 248, 248, 0.06)",
+      "md": "0 0 0 1px rgba(247, 248, 248, 0.08), 0 4px 12px rgba(0, 0, 0, 0.40)"
+    },
+    "motion": {
+      "duration": {
+        "none": "0ms",
+        "fast": "120ms",
+        "normal": "180ms"
+      },
+      "easing": {
+        "standard": "cubic-bezier(0.2, 0, 0, 1)"
+      }
+    },
+    "layout": {
+      "containers": {
+        "sm": "720px",
+        "md": "960px",
+        "lg": "1120px"
+      },
+      "gutters": {
+        "sm": "16px",
+        "md": "24px",
+        "lg": "32px"
+      },
+      "breakpoints": {
+        "sm": "640px",
+        "md": "960px",
+        "lg": "1200px"
+      },
+      "widthModes": {
+        "page": {
+          "mode": "contained",
+          "container": "lg"
+        },
+        "section": {
+          "mode": "contained",
+          "container": "lg"
+        }
+      }
+    },
+    "focus": {
+      "ringWidth": "2px",
+      "ringOffset": "2px",
+      "outlineStyle": "solid"
+    },
+    "zIndex": {
+      "base": 0,
+      "dropdown": 10,
+      "overlay": 20,
+      "modal": 30,
+      "toast": 40
+    }
+  },
+  "fontRoles": {
+    "googleFontsCss2Url": "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap",
+    "roles": {
+      "headlines": {
+        "family": "Inter",
+        "fallback": "system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "weight": 600,
+        "style": "normal",
+        "size": "48px",
+        "tracking": "-0.02em",
+        "fontFeatureSettings": "\"cv01\", \"ss03\", \"kern\", \"liga\""
+      },
+      "subtitles": {
+        "family": "Inter",
+        "fallback": "system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "weight": 510,
+        "style": "normal",
+        "size": "20px",
+        "fontVariationSettings": "'wght' 510",
+        "fontFeatureSettings": "\"cv01\", \"ss03\", \"kern\", \"liga\""
+      },
+      "body": {
+        "family": "Inter",
+        "fallback": "system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "weight": 400,
+        "style": "normal",
+        "size": "16px",
+        "fontFeatureSettings": "\"cv01\", \"ss03\", \"kern\", \"liga\""
+      },
+      "ui": {
+        "family": "Inter",
+        "fallback": "system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "weight": 510,
+        "style": "normal",
+        "size": "14px",
+        "fontVariationSettings": "'wght' 510",
+        "fontFeatureSettings": "\"cv01\", \"ss03\", \"kern\", \"liga\""
+      },
+      "micro": {
+        "family": "JetBrains Mono",
+        "fallback": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+        "weight": 500,
+        "style": "normal",
+        "size": "12px",
+        "textTransform": "uppercase",
+        "tracking": "0.06em",
+        "fontFeatureSettings": "\"kern\", \"liga\", \"calt\""
+      }
+    }
+  }
+}

@@ -1,0 +1,287 @@
+{
+  "schemaVersion": "1",
+  "format": "JSONM",
+  "kind": "named",
+  "id": "ft",
+  "name": "Fintech Trust",
+  "description": "Institutional, premium, systematic. White canvas with a cool precision-blue accent, conservative radii, and soft blue-tinted depth that reinforces structural hierarchy without drama. For financial platforms, data-forward tools, and professional services where measured authority and systematic precision build trust.",
+  "corpus": {
+    "id": "activetwist-design-corpus/v1",
+    "version": "apollo-v0.1.0",
+    "canonical": true,
+    "sourceFiles": [
+      "app/tokens.css",
+      "app/runtime-fonts.css",
+      "app/runtime-token-overrides.css"
+    ]
+  },
+  "settings": {
+    "wcagPolicy": "AA",
+    "appearanceModes": [
+      "light",
+      "dark"
+    ],
+    "systemFollow": false,
+    "defaultMode": "light"
+  },
+  "tokens": {
+    "space": {
+      "scale": {
+        "s0": "0px",
+        "s0_5": "4px",
+        "s1": "8px",
+        "s1_5": "12px",
+        "s2": "16px",
+        "s3": "24px",
+        "s4": "32px",
+        "s5": "40px",
+        "s6": "48px",
+        "s7": "56px",
+        "s8": "64px",
+        "s9": "72px",
+        "s10": "80px",
+        "s12": "96px"
+      },
+      "aliases": {
+        "none": "s0",
+        "xs": "s0_5",
+        "sm": "s1",
+        "md": "s2",
+        "lg": "s3",
+        "xl": "s4",
+        "2xl": "s6"
+      }
+    },
+    "size": {
+      "control": {
+        "sm": "32px",
+        "md": "40px",
+        "lg": "48px"
+      },
+      "icon": {
+        "sm": "16px",
+        "md": "20px",
+        "lg": "24px"
+      },
+      "hitTargetMin": "40px"
+    },
+    "radius": {
+      "scale": {
+        "r0": "0px",
+        "r0_5": "4px",
+        "r1": "8px",
+        "r2": "12px"
+      },
+      "aliases": {
+        "none": "r0",
+        "sm": "r0_5",
+        "md": "r1",
+        "lg": "r2"
+      },
+      "pill": "9999px"
+    },
+    "border": {
+      "hairline": "1px",
+      "thin": "2px"
+    },
+    "typography": {
+      "families": {
+        "sans": "\"Public Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "mono": "\"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace"
+      },
+      "weights": {
+        "light": 300,
+        "regular": 400,
+        "medium": 500,
+        "semibold": 600,
+        "bold": 700
+      },
+      "sizes": {
+        "xs": "12px",
+        "sm": "14px",
+        "md": "16px",
+        "lg": "18px",
+        "xl": "20px",
+        "2xl": "24px",
+        "3xl": "32px"
+      },
+      "lineHeights": {
+        "tight": 1.2,
+        "normal": 1.5,
+        "loose": 1.7
+      },
+      "tracking": {
+        "normal": "0em",
+        "tight": "-0.01em",
+        "wide": "0.02em"
+      }
+    },
+    "color": {
+      "semantic": {
+        "light": {
+          "bg": "#fbfcff",
+          "surface": "#ffffff",
+          "surfaceAlt": "#f4f7ff",
+          "text": "#14213d",
+          "textMuted": "#4c5d7a",
+          "border": "#d8e1f2",
+          "borderStrong": "#aebed9",
+          "focus": "#2563eb",
+          "link": "#2563eb",
+          "linkHover": "#1d4ed8",
+          "accent": "#2563eb",
+          "accentText": "#ffffff",
+          "danger": "#b42318",
+          "dangerText": "#ffffff",
+          "success": "#087443",
+          "successText": "#ffffff",
+          "warning": "#8a5b00",
+          "warningText": "#ffffff"
+        },
+        "dark": {
+          "bg": "#0b1221",
+          "surface": "#111a2e",
+          "surfaceAlt": "#172236",
+          "text": "#e8edf7",
+          "textMuted": "rgba(232,237,247,0.60)",
+          "border": "rgba(232,237,247,0.10)",
+          "borderStrong": "rgba(232,237,247,0.22)",
+          "focus": "#60a5fa",
+          "link": "#60a5fa",
+          "linkHover": "#93c5fd",
+          "accent": "#60a5fa",
+          "accentText": "#0b1221",
+          "danger": "#dc2626",
+          "dangerText": "#ffffff",
+          "success": "#15803d",
+          "successText": "#ffffff",
+          "warning": "#fbbf24",
+          "warningText": "#0b1221"
+        }
+      },
+      "derived": {
+        "linkSurfaceSubtle": "rgba(37, 99, 235, 0.06)",
+        "linkSurfaceSoft": "rgba(37, 99, 235, 0.10)",
+        "linkSurfaceSoftStrong": "rgba(37, 99, 235, 0.14)",
+        "linkBorderSoft": "rgba(37, 99, 235, 0.32)",
+        "successSurfaceSubtle": "rgba(8, 116, 67, 0.06)",
+        "successSurfaceSoft": "rgba(8, 116, 67, 0.10)",
+        "successSurfaceSoftStrong": "rgba(8, 116, 67, 0.14)",
+        "successBorderSoft": "rgba(8, 116, 67, 0.30)",
+        "successBorderSoftStrong": "rgba(8, 116, 67, 0.40)",
+        "warningSurfaceSoft": "rgba(138, 91, 0, 0.10)",
+        "warningSurfaceSoftStrong": "rgba(138, 91, 0, 0.14)",
+        "warningBorderSoft": "rgba(138, 91, 0, 0.30)",
+        "warningBorderSoftStrong": "rgba(138, 91, 0, 0.40)",
+        "dangerSurfaceSubtle": "rgba(180, 35, 24, 0.06)",
+        "dangerSurfaceSoft": "rgba(180, 35, 24, 0.10)",
+        "dangerSurfaceSoftStrong": "rgba(180, 35, 24, 0.14)",
+        "dangerBorderSoft": "rgba(180, 35, 24, 0.30)",
+        "dangerBorderSoftStrong": "rgba(180, 35, 24, 0.40)",
+        "accentSurfaceSubtlest": "rgba(37, 99, 235, 0.04)",
+        "accentSurfaceSubtle": "rgba(37, 99, 235, 0.06)",
+        "accentSurfaceSoft": "rgba(37, 99, 235, 0.10)",
+        "accentSurfaceEmphasis": "rgba(37, 99, 235, 0.14)",
+        "accentBorderSoft": "rgba(37, 99, 235, 0.28)",
+        "textOverlay": "#14213d99",
+        "dangerHover": "#9f1f15"
+      }
+    },
+    "shadow": {
+      "none": "none",
+      "sm": "0 1px 2px rgba(37, 99, 235, 0.08)",
+      "md": "0 10px 30px rgba(37, 99, 235, 0.12)"
+    },
+    "motion": {
+      "duration": {
+        "none": "0ms",
+        "fast": "120ms",
+        "normal": "180ms"
+      },
+      "easing": {
+        "standard": "cubic-bezier(0.2, 0, 0, 1)"
+      }
+    },
+    "layout": {
+      "containers": {
+        "sm": "720px",
+        "md": "960px",
+        "lg": "1120px"
+      },
+      "gutters": {
+        "sm": "16px",
+        "md": "24px",
+        "lg": "32px"
+      },
+      "breakpoints": {
+        "sm": "640px",
+        "md": "960px",
+        "lg": "1200px"
+      },
+      "widthModes": {
+        "page": {
+          "mode": "contained",
+          "container": "lg"
+        },
+        "section": {
+          "mode": "contained",
+          "container": "lg"
+        }
+      }
+    },
+    "focus": {
+      "ringWidth": "2px",
+      "ringOffset": "2px",
+      "outlineStyle": "solid"
+    },
+    "zIndex": {
+      "base": 0,
+      "dropdown": 10,
+      "overlay": 20,
+      "modal": 30,
+      "toast": 40
+    }
+  },
+  "fontRoles": {
+    "googleFontsCss2Url": "https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap",
+    "roles": {
+      "headlines": {
+        "family": "Public Sans",
+        "fallback": "system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "weight": 600,
+        "style": "normal",
+        "size": "56px"
+      },
+      "subtitles": {
+        "family": "Public Sans",
+        "fallback": "system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "weight": 500,
+        "style": "normal",
+        "size": "24px"
+      },
+      "body": {
+        "family": "Public Sans",
+        "fallback": "system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "weight": 400,
+        "style": "normal",
+        "size": "16px"
+      },
+      "ui": {
+        "family": "Public Sans",
+        "fallback": "system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "weight": 500,
+        "style": "normal",
+        "size": "16px"
+      },
+      "micro": {
+        "family": "JetBrains Mono",
+        "fallback": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+        "weight": 500,
+        "style": "normal",
+        "size": "14px",
+        "textTransform": "uppercase",
+        "tracking": "0.08em"
+      }
+    }
+  }
+}

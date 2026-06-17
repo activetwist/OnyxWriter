@@ -1,0 +1,33 @@
+.DS_Store
+node_modules/
+dist/
+dist-ssr/
+src-tauri/target/
+src-tauri/gen/
+.vite/
+*.log
+*.local
+
+# Local planning/runtime systems. These are intentionally not published with the
+# product source tree.
+.amphion/
+.agent/
+.agents/
+.plandocs/
+.vscode/mcp.json
+ops/amphion.json
+AGENTS.md
+
+# Local environment and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.mobileprovision
+
+# Platform/package manager noise
+coverage/
+.turbo/
+.cache/
+.artifacts/

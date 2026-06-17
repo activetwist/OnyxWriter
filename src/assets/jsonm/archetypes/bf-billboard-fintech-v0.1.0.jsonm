@@ -1,0 +1,292 @@
+{
+  "schemaVersion": "1",
+  "format": "JSONM",
+  "kind": "named",
+  "id": "bf",
+  "name": "Billboard Fintech",
+  "description": "High-confidence, retail, touch-first. Near-black and white palette with a singular saturated accent, heavy-weight billboard display typography at large scale with ultra-tight leading, pill radii on all interactive elements, and zero shadows. For consumer fintech, payment platforms, and retail financial products with bold authority and mobile-first clarity.",
+  "corpus": {
+    "id": "activetwist-design-corpus/v1",
+    "version": "apollo-v0.1.0",
+    "canonical": true,
+    "sourceFiles": [
+      "app/tokens.css",
+      "app/runtime-fonts.css",
+      "app/runtime-token-overrides.css"
+    ]
+  },
+  "settings": {
+    "wcagPolicy": "AA",
+    "appearanceModes": [
+      "light",
+      "dark"
+    ],
+    "systemFollow": false,
+    "defaultMode": "light"
+  },
+  "tokens": {
+    "space": {
+      "scale": {
+        "s0": "0px",
+        "s0_5": "4px",
+        "s1": "8px",
+        "s1_5": "12px",
+        "s2": "16px",
+        "s3": "24px",
+        "s4": "32px",
+        "s5": "40px",
+        "s6": "48px",
+        "s7": "56px",
+        "s8": "64px",
+        "s9": "72px",
+        "s10": "80px",
+        "s12": "96px"
+      },
+      "aliases": {
+        "none": "s0",
+        "xs": "s0_5",
+        "sm": "s1",
+        "md": "s2",
+        "lg": "s3",
+        "xl": "s4",
+        "2xl": "s6"
+      }
+    },
+    "size": {
+      "control": {
+        "sm": "40px",
+        "md": "48px",
+        "lg": "56px"
+      },
+      "icon": {
+        "sm": "16px",
+        "md": "20px",
+        "lg": "24px"
+      },
+      "hitTargetMin": "48px"
+    },
+    "radius": {
+      "scale": {
+        "r0": "0px",
+        "r0_5": "4px",
+        "r1": "8px",
+        "r2": "24px"
+      },
+      "aliases": {
+        "none": "r0",
+        "sm": "r0_5",
+        "md": "r1",
+        "lg": "r2"
+      },
+      "pill": "9999px"
+    },
+    "border": {
+      "hairline": "1px",
+      "thin": "2px"
+    },
+    "typography": {
+      "families": {
+        "display": "\"Work Sans\", system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "sans": "\"Inter\", system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "mono": "\"JetBrains Mono\", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace"
+      },
+      "weights": {
+        "regular": 400,
+        "medium": 500,
+        "semibold": 600,
+        "bold": 700,
+        "heavy": 800,
+        "ultra": 900
+      },
+      "sizes": {
+        "xs": "12px",
+        "sm": "14px",
+        "md": "16px",
+        "lg": "18px",
+        "xl": "20px",
+        "2xl": "24px",
+        "3xl": "32px"
+      },
+      "lineHeights": {
+        "tight": 0.95,
+        "normal": 1.5,
+        "loose": 1.7
+      },
+      "tracking": {
+        "normal": "0em",
+        "tight": "-0.03em",
+        "wide": "0.02em"
+      }
+    },
+    "color": {
+      "semantic": {
+        "light": {
+          "bg": "#ffffff",
+          "surface": "#ffffff",
+          "surfaceAlt": "#f5f2fc",
+          "text": "#0b0b0b",
+          "textMuted": "#4a4550",
+          "border": "#dcd4ec",
+          "borderStrong": "#8b5cf6",
+          "focus": "#7c3aed",
+          "link": "#7c3aed",
+          "linkHover": "#6d28d9",
+          "accent": "#7c3aed",
+          "accentText": "#ffffff",
+          "danger": "#dc2626",
+          "dangerText": "#ffffff",
+          "success": "#16a34a",
+          "successText": "#0b0b0b",
+          "warning": "#ea580c",
+          "warningText": "#0b0b0b"
+        },
+        "dark": {
+          "bg": "#09080f",
+          "surface": "#110f1e",
+          "surfaceAlt": "#1a1730",
+          "text": "#f5f3ff",
+          "textMuted": "rgba(245,243,255,0.60)",
+          "border": "rgba(245,243,255,0.10)",
+          "borderStrong": "rgba(245,243,255,0.25)",
+          "focus": "#8b5cf6",
+          "link": "#a78bfa",
+          "linkHover": "#c4b5fd",
+          "accent": "#7c3aed",
+          "accentText": "#ffffff",
+          "danger": "#dc2626",
+          "dangerText": "#ffffff",
+          "success": "#15803d",
+          "successText": "#ffffff",
+          "warning": "#fbbf24",
+          "warningText": "#09080f"
+        }
+      },
+      "derived": {
+        "linkSurfaceSubtle": "rgba(139, 92, 246, 0.06)",
+        "linkSurfaceSoft": "rgba(139, 92, 246, 0.10)",
+        "linkSurfaceSoftStrong": "rgba(139, 92, 246, 0.14)",
+        "linkBorderSoft": "rgba(139, 92, 246, 0.30)",
+        "successSurfaceSubtle": "rgba(22, 163, 74, 0.06)",
+        "successSurfaceSoft": "rgba(22, 163, 74, 0.10)",
+        "successSurfaceSoftStrong": "rgba(22, 163, 74, 0.14)",
+        "successBorderSoft": "rgba(22, 163, 74, 0.30)",
+        "successBorderSoftStrong": "rgba(22, 163, 74, 0.40)",
+        "warningSurfaceSoft": "rgba(234, 88, 12, 0.10)",
+        "warningSurfaceSoftStrong": "rgba(234, 88, 12, 0.14)",
+        "warningBorderSoft": "rgba(234, 88, 12, 0.30)",
+        "warningBorderSoftStrong": "rgba(234, 88, 12, 0.40)",
+        "dangerSurfaceSubtle": "rgba(220, 38, 38, 0.06)",
+        "dangerSurfaceSoft": "rgba(220, 38, 38, 0.10)",
+        "dangerSurfaceSoftStrong": "rgba(220, 38, 38, 0.14)",
+        "dangerBorderSoft": "rgba(220, 38, 38, 0.30)",
+        "dangerBorderSoftStrong": "rgba(220, 38, 38, 0.40)",
+        "accentSurfaceSubtlest": "rgba(139, 92, 246, 0.04)",
+        "accentSurfaceSubtle": "rgba(139, 92, 246, 0.06)",
+        "accentSurfaceSoft": "rgba(139, 92, 246, 0.10)",
+        "accentSurfaceEmphasis": "rgba(139, 92, 246, 0.14)",
+        "accentBorderSoft": "rgba(139, 92, 246, 0.30)",
+        "textOverlay": "#0b0b0b99",
+        "dangerHover": "#b91c1c"
+      }
+    },
+    "shadow": {
+      "none": "none",
+      "sm": "none",
+      "md": "none"
+    },
+    "motion": {
+      "duration": {
+        "none": "0ms",
+        "fast": "120ms",
+        "normal": "180ms"
+      },
+      "easing": {
+        "standard": "cubic-bezier(0.2, 0, 0, 1)",
+        "spring": "cubic-bezier(0.34, 1.56, 0.64, 1)"
+      }
+    },
+    "layout": {
+      "containers": {
+        "sm": "720px",
+        "md": "960px",
+        "lg": "1120px"
+      },
+      "gutters": {
+        "sm": "16px",
+        "md": "24px",
+        "lg": "32px"
+      },
+      "breakpoints": {
+        "sm": "640px",
+        "md": "960px",
+        "lg": "1200px"
+      },
+      "widthModes": {
+        "page": {
+          "mode": "contained",
+          "container": "lg"
+        },
+        "section": {
+          "mode": "contained",
+          "container": "lg"
+        }
+      }
+    },
+    "focus": {
+      "ringWidth": "2px",
+      "ringOffset": "2px",
+      "outlineStyle": "solid"
+    },
+    "zIndex": {
+      "base": 0,
+      "dropdown": 10,
+      "overlay": 20,
+      "modal": 30,
+      "toast": 40
+    }
+  },
+  "fontRoles": {
+    "googleFontsCss2Url": "https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700;800;900&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap",
+    "roles": {
+      "headlines": {
+        "family": "Work Sans",
+        "fallback": "system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "weight": 800,
+        "style": "normal",
+        "size": "120px",
+        "tracking": "-0.03em"
+      },
+      "subtitles": {
+        "family": "Work Sans",
+        "fallback": "system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "weight": 700,
+        "style": "normal",
+        "size": "40px",
+        "tracking": "-0.02em"
+      },
+      "body": {
+        "family": "Inter",
+        "fallback": "system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "weight": 400,
+        "style": "normal",
+        "size": "16px"
+      },
+      "ui": {
+        "family": "Inter",
+        "fallback": "system-ui, -apple-system, \"Segoe UI\", Roboto, Arial, sans-serif",
+        "weight": 500,
+        "style": "normal",
+        "size": "14px"
+      },
+      "micro": {
+        "family": "JetBrains Mono",
+        "fallback": "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
+        "weight": 500,
+        "style": "normal",
+        "size": "12px",
+        "textTransform": "uppercase",
+        "tracking": "0.08em"
+      }
+    }
+  }
+}
