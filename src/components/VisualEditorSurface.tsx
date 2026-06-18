@@ -1,5 +1,5 @@
 import { useEditor, EditorContent, type Editor } from "@tiptap/react";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { markdownToVisual, visualHtmlToMarkdown } from "../lib/editor/markdownBridge";
 import { extractMermaidBlocks } from "../lib/editor/mermaidBlocks";
 import { tiptapExtensions } from "../lib/editor/tiptap";
@@ -48,12 +48,16 @@ export function VisualEditorSurface({ document, onChange, onOpenLink, onVisualEd
         </div>
       ) : null}
       <TiptapEditorSurface
+        documentKey={document.path}
         html={visual.html}
+        sourceRaw={document.raw}
         onOpenLink={onOpenLink}
         onVisualEditorChange={onVisualEditorChange}
         onUpdate={(html) => {
           const body = visualHtmlToMarkdown(html);
-          onChange(serializeOkfDocument({ frontmatter: parsed.frontmatter, body }));
+          const raw = serializeOkfDocument({ frontmatter: parsed.frontmatter, body });
+          onChange(raw);
+          return raw;
         }}
       />
     </div>
@@ -61,16 +65,33 @@ export function VisualEditorSurface({ document, onChange, onOpenLink, onVisualEd
 }
 
 function TiptapEditorSurface({
+  documentKey,
   html,
+  sourceRaw,
   onOpenLink,
   onUpdate,
   onVisualEditorChange,
 }: {
+  documentKey: string;
   html: string;
+  sourceRaw: string;
   onOpenLink?: (href: string) => void;
-  onUpdate: (html: string) => void;
+  onUpdate: (html: string) => string;
   onVisualEditorChange?: (editor: Editor | null) => void;
 }) {
+  const onUpdateRef = useRef(onUpdate);
+  const documentKeyRef = useRef(documentKey);
+  const lastLocalRawRef = useRef<{ documentKey: string; raw: string } | null>(null);
+  const syncedDocumentKeyRef = useRef(documentKey);
+
+  useEffect(() => {
+    onUpdateRef.current = onUpdate;
+  }, [onUpdate]);
+
+  useEffect(() => {
+    documentKeyRef.current = documentKey;
+  }, [documentKey]);
+
   const editor = useEditor(
     {
       immediatelyRender: false,
@@ -105,17 +126,28 @@ function TiptapEditorSurface({
         },
       },
       onUpdate: ({ editor }) => {
-        onUpdate(editor.getHTML());
+        const raw = onUpdateRef.current(editor.getHTML());
+        lastLocalRawRef.current = { documentKey: documentKeyRef.current, raw };
       },
     },
     [],
   );
 
   useEffect(() => {
-    if (editor && editor.getHTML() !== html) {
+    if (!editor) return;
+
+    if (syncedDocumentKeyRef.current !== documentKey) {
+      syncedDocumentKeyRef.current = documentKey;
+      lastLocalRawRef.current = null;
+    } else if (lastLocalRawRef.current?.documentKey === documentKey && lastLocalRawRef.current.raw === sourceRaw) {
+      return;
+    }
+
+    lastLocalRawRef.current = null;
+    if (editor.getHTML() !== html) {
       editor.commands.setContent(html, { emitUpdate: false });
     }
-  }, [editor, html]);
+  }, [documentKey, editor, html, sourceRaw]);
 
   useEffect(() => {
     if (!editor) return;
