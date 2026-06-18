@@ -79,7 +79,7 @@ The release workflow builds:
 - macOS Apple Silicon via `--target aarch64-apple-darwin`;
 - Linux DEB/RPM via `--bundles deb,rpm`.
 
-The workflow uses `tauri-apps/tauri-action@v1` with `uploadUpdaterJson: true` and `uploadUpdaterSignatures: true` so the release can publish updater metadata and signatures alongside installer assets.
+The workflow uses `tauri-apps/tauri-action` with `includeUpdaterJson: true` so the release can publish updater metadata and signatures alongside installer assets.
 
 Linux in-app updater support is deferred until AppImage packaging is reliable. DEB/RPM remain manual update assets.
 

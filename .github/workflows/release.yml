@@ -82,6 +82,5 @@ jobs:
           releaseBody: "See release notes and assets for this Onyx Writer build."
           releaseDraft: true
           prerelease: false
-          uploadUpdaterJson: true
-          uploadUpdaterSignatures: true
+          includeUpdaterJson: true
           args: ${{ matrix.args }}
