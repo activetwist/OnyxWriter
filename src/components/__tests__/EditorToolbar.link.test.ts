@@ -15,6 +15,18 @@ afterEach(() => {
 });
 
 describe("EditorToolbar link authoring", () => {
+  it("calls the refresh handler from the utility toolbar", async () => {
+    const editor = createEditorMock();
+    const onRefresh = vi.fn();
+    const host = await renderToolbar(editor.instance, [], { onRefresh });
+
+    await act(async () => {
+      button(host, "Refresh bundle")?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+    });
+
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
+
   it("adds a link without using window.prompt", async () => {
     const prompt = vi.spyOn(window, "prompt").mockImplementation(() => {
       throw new Error("prompt should not be used");
@@ -88,9 +100,14 @@ describe("EditorToolbar link authoring", () => {
   });
 });
 
-async function renderToolbar(editor: Editor, linkSuggestions: Array<{ href: string; path: string }> = []): Promise<HTMLDivElement> {
+async function renderToolbar(
+  editor: Editor,
+  linkSuggestions: Array<{ href: string; path: string }> = [],
+  overrides: Partial<React.ComponentProps<typeof EditorToolbar>> = {},
+): Promise<HTMLDivElement> {
   const host = document.createElement("div");
   document.body.appendChild(host);
+  const onRefresh = vi.fn();
   const root = createRoot(host);
   await act(async () => {
     root.render(
@@ -99,15 +116,19 @@ async function renderToolbar(editor: Editor, linkSuggestions: Array<{ href: stri
         dirty: false,
         saveStatus: "saved",
         canSave: true,
+        canRefresh: true,
+        refreshBusy: false,
         visualEditor: editor,
         canInsertImage: true,
         canOpenGraph: true,
         graphOpen: false,
         onModeChange: vi.fn(),
+        onRefresh,
         onSave: vi.fn(),
         onInsertImage: vi.fn(),
         onToggleGraph: vi.fn(),
         linkSuggestions,
+        ...overrides,
       }),
     );
   });
@@ -147,7 +168,7 @@ function createEditorMock({
   href?: string;
   isLinkActive?: boolean;
   selection?: { from: number; to: number };
-}) {
+} = {}) {
   const chain = {
     focus: vi.fn(() => chain),
     setTextSelection: vi.fn(() => chain),

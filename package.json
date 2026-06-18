@@ -1,6 +1,6 @@
 {
   "name": "onyxwriter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "type": "module",
   "license": "MIT",
@@ -26,6 +26,7 @@
     "@tauri-apps/api": "^2.9.0",
     "@tauri-apps/plugin-dialog": "^2.4.0",
     "@tauri-apps/plugin-opener": "^2.5.4",
+    "@tauri-apps/plugin-updater": "^2.10.1",
     "@tiptap/core": "3.26.1",
     "@tiptap/extension-image": "3.26.1",
     "@tiptap/extension-link": "3.26.1",

@@ -6,7 +6,7 @@ The app also includes a JSONM design-system runtime. JSONM definitions are valid
 
 ## Status
 
-Onyx Writer `0.1.0-alpha` is the first public alpha release. It is useful for testing local OKF bundle editing now, but it should still be treated as early software. Keep backups of important bundles and expect the OKF support surface to evolve as the format and editor mature.
+Onyx Writer `0.1.1-alpha` is the current public alpha release. It is useful for testing local OKF bundle editing now, but it should still be treated as early software. Keep backups of important bundles and expect the OKF support surface to evolve as the format and editor mature.
 
 ## Features
 
@@ -20,7 +20,7 @@ Onyx Writer `0.1.0-alpha` is the first public alpha release. It is useful for te
 
 ## Downloads
 
-The `v0.1.0-alpha` GitHub pre-release includes:
+The `v0.1.1-alpha` GitHub pre-release includes:
 
 - macOS Apple Silicon DMG
 - Linux DEB package
@@ -28,6 +28,8 @@ The `v0.1.0-alpha` GitHub pre-release includes:
 - SHA-256 checksums
 
 The macOS app is not signed or notarized yet, so macOS may show a warning on first launch. Windows and AppImage builds are not part of this alpha.
+
+`v0.1.1-alpha` is the first release intended to exercise the signed macOS updater path. Linux DEB/RPM packages remain manual update assets. See [docs/release/auto-updates.md](docs/release/auto-updates.md).
 
 ## Setup
 
@@ -75,6 +77,8 @@ Application settings live outside bundles. Imported JSONM design systems and the
 
 Onyx Writer does not create `.onyxwriter`, `.obsidian`, or other hidden app-private folders in source projects by default. If you use OKF alongside code, prefer a nested bundle such as `docs/okf/` or `knowledge/` instead of opening the whole repository root as a bundle. See [docs/guides/okf-in-code-projects.md](docs/guides/okf-in-code-projects.md).
 
+For agentic IDE workflows, Onyx Writer can also be used as a private document observability surface in a `.plandocs` bundle. See [docs/guides/onyx-agent-authoring.md](docs/guides/onyx-agent-authoring.md) for portable Codex, Claude, Cursor, and Windsurf authoring instructions.
+
 ## Editing and Autosave
 
 Bundle-backed documents autosave after a short debounce using the same scoped Tauri write path as manual save. The toolbar shows `Unsaved`, `Saving`, `Saved`, or `Error`, and manual save remains available as a fallback. Browser sample bundles are preview-only and do not write to disk.
@@ -103,6 +107,7 @@ This product repository intentionally excludes local planning/runtime material s
 - Complex Markdown should be reviewed or edited in Raw mode when the validation/confidence rail says so.
 - macOS builds are unsigned and not notarized.
 - Linux AppImage packaging is not available yet.
+- `v0.1.1-alpha` should be installed manually; later signed macOS releases can use the in-app updater path.
 - Windows builds have not been verified.
 - There is no cloud sync, account system, collaboration, or hosted storage.
 

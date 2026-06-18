@@ -82,6 +82,18 @@ Run this checklist against the actual Tauri desktop shell before a release candi
 - Try opening a missing recent bundle and confirm it is forgotten with a clear status message.
 - Try importing invalid JSONM and confirm the settings panel reports validation errors.
 
+## Updates
+
+- Open Settings > Updates in the browser/MAMP preview and confirm update checks show an unavailable desktop-runtime state instead of crashing.
+- Open Settings > Updates in the installed Tauri application and confirm Check for Updates reaches the GitHub release channel.
+- With no later signed release available, confirm the app reports that it is up to date.
+- With a later signed test release available, confirm the app reports the new version, release body, and install action.
+- Install the update and confirm the app reports that restart is required rather than silently restarting.
+- Restart Onyx Writer and confirm the new version is active.
+- Temporarily break the update endpoint or network and confirm the UI shows a release-channel/network failure.
+- Test invalid or mismatched signature metadata in a controlled release draft and confirm the UI distinguishes signature verification failure.
+- Confirm `v0.1.0-alpha` remains documented as manual-only because it does not contain updater code.
+
 ## Linux Package QA
 
 - On JARVIS or another Linux QA machine, install the produced Linux artifact from `.artifacts/ROU-037-linux/` or the GitHub release download.
@@ -90,3 +102,4 @@ Run this checklist against the actual Tauri desktop shell before a release candi
 - Confirm a nested OKF bundle inside a code project opens without managing the project root.
 - Confirm external links open in the default browser.
 - Confirm app settings are not written into the opened OKF bundle.
+- Confirm Linux DEB/RPM builds are treated as manual update packages until AppImage packaging is restored.

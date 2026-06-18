@@ -8,6 +8,7 @@
     "dialog:allow-open",
     "dialog:default",
     "opener:allow-default-urls",
-    "opener:allow-open-url"
+    "opener:allow-open-url",
+    "updater:default"
   ]
 }

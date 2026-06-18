@@ -145,9 +145,15 @@ function tableMarkdownToHtml(block: string): string {
 }
 
 function tableHtmlToMarkdown(node: HTMLElement): string {
-  const headerCells = Array.from(node.querySelectorAll("thead tr:first-child th, tr:first-child th"));
+  const allRows = Array.from(node.querySelectorAll("tr"));
+  const explicitHeaderRow = node.querySelector("thead tr");
+  const fallbackHeaderRow = explicitHeaderRow
+    ? null
+    : allRows.find((row) => Array.from(row.children).some((cell) => cell instanceof HTMLElement && cell.tagName === "TH"));
+  const headerRow = explicitHeaderRow ?? fallbackHeaderRow ?? null;
+  const headerCells = headerRow ? Array.from(headerRow.children) : [];
   const headers = headerCells.map((cell) => inlineHtmlToMarkdown(cell as HTMLElement));
-  const bodyRows = Array.from(node.querySelectorAll("tbody tr"));
+  const bodyRows = allRows.filter((row) => row !== headerRow && !row.closest("thead"));
   const rows = bodyRows.map((row) => Array.from(row.children).map((cell) => inlineHtmlToMarkdown(cell as HTMLElement)));
   const width = headers.length || rows[0]?.length || 0;
   const safeHeaders = headers.length ? headers : Array.from({ length: width }, (_, index) => `Column ${index + 1}`);

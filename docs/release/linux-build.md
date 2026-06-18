@@ -136,6 +136,16 @@ failed to bundle project `timeout: global`
 
 The `.deb` and `.rpm` bundles are available for Linux QA. AppImage packaging timed out while downloading or running the external linuxdeploy/AppRun tooling and should be retried separately if AppImage distribution is required for the first public release.
 
+## Auto-Update Implication
+
+Tauri's Linux in-app updater path is AppImage-oriented. The current Linux release path is therefore:
+
+- DEB/RPM for manual Linux installs and manual package updates;
+- no Linux in-app auto-update until AppImage packaging is reliable;
+- AppImage remediation as a separate packaging follow-up if Linux in-app updates are required for a release.
+
+The GitHub Actions release workflow intentionally builds Linux with `--bundles deb,rpm` for now so an AppImage timeout does not block macOS updater work or manual Linux package releases.
+
 ## Prerequisites
 
 JARVIS initially lacked DBus/WebKitGTK/Tauri Linux dependencies and did not allow passwordless sudo from this session. These packages were required before the successful package build:

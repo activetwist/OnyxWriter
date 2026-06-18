@@ -69,6 +69,26 @@ afterEach(() => {
 });
 
 describe("AppShell document actions", () => {
+  it("refreshes the bundle tree and open documents from disk", async () => {
+    const host = await renderOpenBundle();
+    await waitFor(() => host.querySelector('[title="tables/orders.md"]'));
+
+    await act(async () => {
+      rowByTitle(host, "tables/orders.md").click();
+    });
+    await waitFor(() => host.textContent?.includes("Orders"));
+
+    files.set("tables/orders.md", "---\ntype: Concept\ntitle: Orders Updated\n---\n\n# Orders Updated\n");
+
+    await act(async () => {
+      buttonByLabel(host, "Refresh bundle").click();
+    });
+
+    await waitFor(() => host.textContent?.includes("Orders Updated"));
+    expect(workspaceApi.readWorkspaceFile).toHaveBeenCalledWith("/tmp/Onyx-Test", "tables/orders.md");
+    expect(host.textContent).toContain("Refreshed bundle.");
+  });
+
   it("creates folders through an app-owned dialog", async () => {
     const host = await renderOpenBundle();
 

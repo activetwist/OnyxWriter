@@ -22,6 +22,23 @@ describe("markdown visual bridge", () => {
     expect(visualHtmlToMarkdown(visual.html)).toBe(markdown);
   });
 
+  it("does not duplicate TipTap-normalized tbody table headers", () => {
+    const html = "<table><tbody><tr><th>Story</th><th>Publishes</th></tr><tr><td>P3-01</td><td>2026-06-18</td></tr></tbody></table>";
+    expect(visualHtmlToMarkdown(html)).toBe("| Story | Publishes |\n| --- | --- |\n| P3-01 | 2026-06-18 |\n");
+  });
+
+  it("keeps table serialization idempotent after a TipTap-normalized table", () => {
+    const html = "<table><tbody><tr><th>Story</th><th>Publishes</th></tr><tr><td>P3-01</td><td>2026-06-18</td></tr></tbody></table>";
+    const first = visualHtmlToMarkdown(html);
+    const second = visualHtmlToMarkdown(markdownToVisual(first).html);
+    expect(second).toBe(first);
+  });
+
+  it("serializes header-only TipTap-normalized tables without adding body rows", () => {
+    const html = "<table><tbody><tr><th>Story</th><th>Publishes</th></tr></tbody></table>";
+    expect(visualHtmlToMarkdown(html)).toBe("| Story | Publishes |\n| --- | --- |\n");
+  });
+
   it("round-trips Markdown images", () => {
     const markdown = "![Chart](assets/images/chart.png \"Quarterly chart\")\n";
     const visual = markdownToVisual(markdown);

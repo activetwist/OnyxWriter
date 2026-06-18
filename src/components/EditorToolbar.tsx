@@ -17,6 +17,7 @@ import {
   Network,
   Pilcrow,
   Redo2,
+  RefreshCw,
   Save,
   Table2,
   Undo2,
@@ -30,11 +31,14 @@ interface EditorToolbarProps {
   dirty: boolean;
   saveStatus: SaveStatus;
   canSave: boolean;
+  canRefresh: boolean;
+  refreshBusy: boolean;
   visualEditor: Editor | null;
   canInsertImage: boolean;
   canOpenGraph: boolean;
   graphOpen: boolean;
   onModeChange: (mode: EditorMode) => void;
+  onRefresh: () => void;
   onSave: () => void;
   onInsertImage: () => void;
   onToggleGraph: () => void;
@@ -57,11 +61,14 @@ export function EditorToolbar({
   dirty,
   saveStatus,
   canSave,
+  canRefresh,
+  refreshBusy,
   visualEditor,
   canInsertImage,
   canOpenGraph,
   graphOpen,
   onModeChange,
+  onRefresh,
   onSave,
   onInsertImage,
   onToggleGraph,
@@ -241,6 +248,16 @@ export function EditorToolbar({
               <Code2 size={16} />
             </button>
           </div>
+          <button
+            className="toolbar-icon-button"
+            disabled={!canRefresh || refreshBusy}
+            onClick={onRefresh}
+            title={refreshBusy ? "Refreshing bundle" : "Refresh bundle"}
+            aria-label={refreshBusy ? "Refreshing bundle" : "Refresh bundle"}
+            type="button"
+          >
+            <RefreshCw size={16} />
+          </button>
           <button
             className={`toolbar-icon-button save-action save-${saveStatus}`}
             disabled={!dirty || !canSave}

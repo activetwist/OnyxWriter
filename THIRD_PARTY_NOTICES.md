@@ -5,6 +5,7 @@ Onyx Writer is distributed under the MIT License. The first release line is desi
 ## Runtime and Framework
 
 - Tauri packages and crates: MIT or Apache-2.0, depending on package.
+- Tauri updater packages (`@tauri-apps/plugin-updater`, `tauri-plugin-updater`): MIT or Apache-2.0, depending on package/crate.
 - React: MIT.
 - Vite: MIT.
 - TypeScript: Apache-2.0.

@@ -25,6 +25,7 @@ Exclude:
 - `dist/`
 - `src-tauri/target/`
 - local `.env*`, credentials, logs, caches, and machine-specific files
+- updater private keys, updater passwords, and local signing files such as `*.key`
 
 ## Why Not Push Local `main` Directly
 
@@ -46,6 +47,26 @@ The first GitHub publication must use a clean publication branch or export repos
 Continue feature work in the local development repository. When refreshing the private GitHub branch, rebuild the clean export from the current source rather than pushing local internal history.
 
 If the public repository ever becomes the primary development repository, migrate local planning tooling into a separate private repo or keep it outside Git entirely.
+
+## Release Signing Hygiene
+
+The Tauri updater public key is safe to commit in `src-tauri/tauri.conf.json`. The private updater key is not.
+
+Keep updater signing material in local secure storage and GitHub Actions secrets only:
+
+```text
+TAURI_SIGNING_PRIVATE_KEY
+TAURI_SIGNING_PRIVATE_KEY_PASSWORD
+```
+
+Before pushing a release-prep change, verify that no private key material or local signer output is staged:
+
+```sh
+git diff --cached --name-only | rg '(\\.key$|\\.pem$|\\.p12$|\\.mobileprovision$)'
+git diff --cached | rg 'TAURI_SIGNING_PRIVATE_KEY|BEGIN .*PRIVATE|untrusted comment: minisign secret key'
+```
+
+Both commands should produce no output.
 
 ## Verification Checklist
 

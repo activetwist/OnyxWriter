@@ -35,6 +35,8 @@ platform/
 
 Both layouts keep OKF documents versioned with the project while avoiding source, build, dependency, and IDE folders.
 
+For private agent-planning workflows, a hidden `.plandocs/` bundle is also acceptable when that folder is intentionally treated as the Onyx root. See [onyx-agent-authoring.md](onyx-agent-authoring.md) for portable instructions that can be copied into `AGENTS.md`, `CLAUDE.md`, Cursor rules, or Windsurf rules.
+
 ## What Onyx Writes
 
 Inside the selected bundle, Onyx Writer may write:
@@ -80,3 +82,5 @@ Ignored folders do not appear in the document tree, graph, link suggestions, or 
 ## IDE Support
 
 OKF files are Markdown with YAML frontmatter, so most editors can open them immediately. Future IDE support could add OKF validation, frontmatter completion, link completion, and diagnostics, but no IDE extension is required to use an OKF bundle today.
+
+When an agentic IDE writes documentation for a project, give it explicit Onyx bundle rules so it does not skip hidden `.plandocs` folders, create concept documents without frontmatter, or hand-edit generated index regions. The portable guide is [onyx-agent-authoring.md](onyx-agent-authoring.md).

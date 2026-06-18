@@ -1593,6 +1593,13 @@ button {
   padding: var(--ow-space-md);
 }
 
+.update-settings {
+  display: grid;
+  gap: var(--ow-space-md);
+  overflow: auto;
+  padding: var(--ow-space-md);
+}
+
 .settings-section {
   display: grid;
   gap: var(--ow-space-sm);
@@ -1617,6 +1624,81 @@ button {
   display: flex;
   flex-wrap: wrap;
   gap: var(--ow-space-sm);
+}
+
+.update-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ow-space-sm);
+}
+
+.update-card,
+.update-status,
+.update-progress {
+  border: 1px solid var(--ow-border);
+  border-radius: var(--ow-radius-sm);
+  background: var(--ow-surface-alt);
+  color: var(--ow-text);
+  padding: 10px 12px;
+}
+
+.update-card {
+  display: grid;
+  gap: 4px;
+}
+
+.update-card span,
+.update-card p {
+  color: var(--ow-text-muted);
+  font-size: var(--ow-type-sm);
+}
+
+.update-card p {
+  margin: 4px 0 0;
+  white-space: pre-wrap;
+}
+
+.update-status {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--ow-space-sm);
+}
+
+.update-status.success {
+  border-color: color-mix(in srgb, var(--ow-success) 32%, var(--ow-border));
+  background: var(--ow-success-surface);
+  color: var(--ow-success);
+}
+
+.update-status.muted {
+  color: var(--ow-text-muted);
+}
+
+.update-status.danger {
+  border-color: color-mix(in srgb, var(--ow-danger) 32%, var(--ow-border));
+  background: var(--ow-danger-surface);
+  color: var(--ow-danger);
+}
+
+.update-progress {
+  display: grid;
+  gap: 8px;
+}
+
+.update-progress-track {
+  overflow: hidden;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--ow-border);
+}
+
+.update-progress-track span {
+  display: block;
+  height: 100%;
+  min-width: 12%;
+  border-radius: inherit;
+  background: var(--ow-accent);
+  transition: width 160ms ease;
 }
 
 .current-drawer-path {

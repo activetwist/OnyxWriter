@@ -25,6 +25,8 @@ AGENTS.md
 *.pem
 *.p12
 *.mobileprovision
+*.key
+*.key.pub
 
 # Platform/package manager noise
 coverage/

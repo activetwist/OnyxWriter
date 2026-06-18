@@ -23,7 +23,7 @@ export function SettingsDialog({ open, onClose, tabs, activeTab, onTabChange, ch
         <header className="settings-header">
           <div>
             <h2 id="settings-title">Settings</h2>
-            <p>Bundles and design system</p>
+            <p>Bundles, design system, and updates</p>
           </div>
           <button className="icon-button" type="button" onClick={onClose} aria-label="Close settings">
             <X size={18} />

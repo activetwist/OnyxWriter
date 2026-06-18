@@ -10,6 +10,7 @@ import { DocumentTabs } from "./DocumentTabs";
 import { EditorToolbar } from "./EditorToolbar";
 import { ProjectBundleDialog } from "./ProjectBundleDialog";
 import { SettingsDialog, type SettingsTab } from "./SettingsDialog";
+import { UpdateSettings } from "./UpdateSettings";
 import { ValidationPanel } from "./ValidationPanel";
 import { WorkspaceLauncher } from "./WorkspaceLauncher";
 import { WorkspaceSidebar } from "./WorkspaceSidebar";
@@ -99,6 +100,7 @@ const SAMPLE_DRAWER_ROOT = SAMPLE_BUNDLE_ROOT;
 const SETTINGS_TABS: SettingsTab[] = [
   { id: "drawers", label: "Bundles" },
   { id: "design-system", label: "Design System" },
+  { id: "updates", label: "Updates" },
 ];
 const JSONM_SPEC_URL = "https://github.com/activetwist/jsonm";
 
@@ -202,6 +204,7 @@ export function AppShell() {
   const [designError, setDesignError] = useState("");
   const [graphOpen, setGraphOpen] = useState(false);
   const [graphDocuments, setGraphDocuments] = useState<Record<string, string>>(SAMPLE_DOCS);
+  const [refreshBusy, setRefreshBusy] = useState(false);
   const [pendingMutation, setPendingMutation] = useState<DrawerMutationPlan | null>(null);
   const [pathInputRequest, setPathInputRequest] = useState<PathInputRequest | null>(null);
   const [projectBundleRequest, setProjectBundleRequest] = useState<ProjectBundleRequest | null>(null);
@@ -741,6 +744,66 @@ export function AppShell() {
     await saveSnapshot(state.rootPath, state.openDocument.path, state.openDocument.raw, true);
   }, [saveSnapshot, state.openDocument, state.rootPath]);
 
+  const refreshBundle = useCallback(async () => {
+    if (!state.rootPath) {
+      setState((current) => ({ ...current, status: "Open a bundle before refreshing." }));
+      return;
+    }
+    if (state.rootPath === SAMPLE_DRAWER_ROOT) {
+      setGraphDocuments(SAMPLE_DOCS);
+      setState((current) => ({ ...current, tree: SAMPLE_TREE, status: "Sample bundle refreshed." }));
+      return;
+    }
+    const rootPath = state.rootPath;
+    setRefreshBusy(true);
+    setState((current) => ({ ...current, status: "Refreshing bundle." }));
+    try {
+      const dirtyDocuments = state.openDocuments.filter((document) => canAutosaveDocument(rootPath, document));
+      await Promise.all(dirtyDocuments.map((document) => writeWorkspaceFile(rootPath, document.path, document.raw)));
+      const tree = await refreshTree(rootPath);
+      const documents = await loadGraphDocuments(rootPath, tree);
+      const nextKnownPaths = new Set(markdownPaths(tree));
+      setState((current) => {
+        if (current.rootPath !== rootPath) return current;
+        const openDocuments = current.openDocuments
+          .map((document) => {
+            if (!nextKnownPaths.has(document.path) || documents[document.path] === undefined) return null;
+            const raw = documents[document.path];
+            return {
+              path: document.path,
+              raw,
+              dirty: false,
+              validation: validateWithConfidence(document.path, raw, nextKnownPaths),
+            };
+          })
+          .filter((document): document is OpenDocumentState => Boolean(document));
+        const active = current.openDocument ? activeDocumentFrom(openDocuments, current.openDocument.path) : openDocuments[0] ?? null;
+        const selectedTreePath = current.selectedTreePath && findWorkspaceEntry(tree, current.selectedTreePath) ? current.selectedTreePath : active?.path ?? "";
+        const skippedCount = current.openDocuments.length - openDocuments.length;
+        const refreshMessage = dirtyDocuments.length ? `Saved ${dirtyDocuments.length} dirty tab${dirtyDocuments.length === 1 ? "" : "s"} and refreshed bundle.` : "Refreshed bundle.";
+        const skippedSuffix = skippedCount ? ` Skipped ${skippedCount} missing tab${skippedCount === 1 ? "" : "s"}.` : "";
+        return {
+          ...current,
+          tree,
+          selectedPath: active?.path ?? "",
+          selectedTreePath,
+          openDocument: active,
+          openDocuments,
+          saveStatus: "clean",
+          status: `${refreshMessage}${skippedSuffix}`,
+        };
+      });
+    } catch (error) {
+      setState((current) => ({
+        ...current,
+        saveStatus: "error",
+        status: error instanceof Error ? `Refresh failed: ${error.message}` : `Refresh failed: ${String(error)}`,
+      }));
+    } finally {
+      setRefreshBusy(false);
+    }
+  }, [loadGraphDocuments, refreshTree, state.openDocuments, state.rootPath]);
+
   const openGraph = useCallback(async () => {
     if (state.rootPath && state.tree) await loadGraphDocuments(state.rootPath, state.tree);
     setGraphOpen((current) => !current);
@@ -1103,11 +1166,14 @@ export function AppShell() {
           dirty={state.openDocument?.dirty ?? false}
           saveStatus={state.saveStatus}
           canSave={Boolean(state.openDocument && state.rootPath !== SAMPLE_DRAWER_ROOT)}
+          canRefresh={Boolean(state.rootPath)}
+          refreshBusy={refreshBusy}
           visualEditor={visualEditor}
           canInsertImage={Boolean(state.rootPath)}
           canOpenGraph={Boolean(state.rootPath)}
           graphOpen={graphOpen}
           onModeChange={setMode}
+          onRefresh={refreshBundle}
           onSave={save}
           onInsertImage={insertImage}
           onToggleGraph={openGraph}
@@ -1163,7 +1229,7 @@ export function AppShell() {
             onOpenRecentDrawer={openWorkspacePath}
             onShowSystemFilesChange={setSystemFilesVisible}
           />
-        ) : designState ? (
+        ) : settingsTab === "design-system" && designState ? (
           <DesignSystemSettings
             systems={designState.systems}
             activeId={designState.activeId}
@@ -1177,6 +1243,8 @@ export function AppShell() {
             onReset={resetTheme}
             onOpenSpec={openJsonmSpec}
           />
+        ) : settingsTab === "updates" ? (
+          <UpdateSettings />
         ) : (
           <div className="settings-loading">Loading design systems.</div>
         )}
