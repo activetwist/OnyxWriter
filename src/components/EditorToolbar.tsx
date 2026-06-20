@@ -23,6 +23,7 @@ import {
   Undo2,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import type { EditorCommandRequest } from "../lib/appCommands";
 import type { EditorMode, SaveStatus } from "../lib/state/workspaceStore";
 import { TableToolbar } from "./TableToolbar";
 
@@ -42,6 +43,7 @@ interface EditorToolbarProps {
   onSave: () => void;
   onInsertImage: () => void;
   onToggleGraph: () => void;
+  commandRequest?: EditorCommandRequest | null;
   linkSuggestions?: LinkSuggestion[];
 }
 
@@ -72,6 +74,7 @@ export function EditorToolbar({
   onSave,
   onInsertImage,
   onToggleGraph,
+  commandRequest,
   linkSuggestions = [],
 }: EditorToolbarProps) {
   const [, setToolbarVersion] = useState(0);
@@ -123,6 +126,62 @@ export function EditorToolbar({
     visualEditor.chain().focus().extendMarkRange("link").unsetLink().run();
     closeLinkEditor();
   };
+  const executeEditorCommand = (command: EditorCommandRequest["command"]) => {
+    if (!visualEditor || !canUseVisualCommands) return;
+    const chain = visualEditor.chain().focus();
+    switch (command) {
+      case "editor.paragraph":
+        chain.setParagraph().run();
+        break;
+      case "editor.heading1":
+        chain.toggleHeading({ level: 1 }).run();
+        break;
+      case "editor.heading2":
+        chain.toggleHeading({ level: 2 }).run();
+        break;
+      case "editor.heading3":
+        chain.toggleHeading({ level: 3 }).run();
+        break;
+      case "editor.bold":
+        chain.toggleBold().run();
+        break;
+      case "editor.italic":
+        chain.toggleItalic().run();
+        break;
+      case "editor.code":
+        chain.toggleCode().run();
+        break;
+      case "editor.bulletList":
+        chain.toggleBulletList().run();
+        break;
+      case "editor.orderedList":
+        chain.toggleOrderedList().run();
+        break;
+      case "editor.link":
+        openLinkEditor();
+        break;
+      case "editor.unlink":
+        removeLink();
+        break;
+      case "editor.table":
+        chain.insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
+        break;
+      case "editor.image":
+        onInsertImage();
+        break;
+      case "editor.undo":
+        chain.undo().run();
+        break;
+      case "editor.redo":
+        chain.redo().run();
+        break;
+    }
+  };
+
+  useEffect(() => {
+    if (!commandRequest) return;
+    executeEditorCommand(commandRequest.command);
+  }, [commandRequest]);
 
   return (
     <div className="editor-toolbar-stack">

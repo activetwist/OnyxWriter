@@ -46,8 +46,13 @@ Run this checklist against the actual Tauri desktop shell before a release candi
 
 - Use Visual mode for headings, bold, italic, links, lists, tables, and images.
 - Open several documents and confirm each document remains available as a tab above the editor toolbar.
+- Confirm the native menu bar is visible in the installed desktop app and includes Onyx Writer, File, Edit, Format, Insert, View, Window, and Help menus.
+- Use native menu items for Open Bundle, Create Bundle, New Document, New Folder, Save, Refresh Bundle, Close Tab, Visual/Raw toggle, Bundle Graph, Settings, and basic formatting actions.
+- Confirm Command/Control+R refreshes the bundle instead of reloading or blanking the desktop app.
 - Use Ctrl+Tab to move to the next open document tab, and Ctrl+Shift+Tab to move to the previous tab.
 - Use Command+W on macOS and confirm it closes the active document tab instead of closing the application window.
+- Use Command/Control+B, Command/Control+I, Command/Control+K, and Command/Control+Shift+K in Visual mode and confirm they match toolbar behavior.
+- Confirm raw editor shortcuts remain CodeMirror-driven and visual formatting shortcuts do not mutate raw text unexpectedly.
 - Close a tab and confirm the neighboring tab remains open.
 - Quit and reopen the app and confirm the prior bundle, open document tabs, and active tab are restored; missing saved tabs should be skipped with a clear status.
 - Use table-specific controls while a table is selected.

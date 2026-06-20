@@ -1,4 +1,5 @@
 mod design_system_fs;
+mod menu;
 mod okf_fs;
 
 use design_system_fs::{
@@ -17,6 +18,10 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
+        .setup(|app| {
+            menu::install_app_menu(app)?;
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             list_workspace,
             directory_has_entries,

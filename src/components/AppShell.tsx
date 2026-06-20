@@ -53,6 +53,14 @@ import {
 type ValidationResult,
 } from "../lib/okf";
 import {
+  commandFromKeyboardEvent,
+  commandFromMenuPayload,
+  isEditorCommand,
+  shouldPreventDefaultForCommand,
+  type AppCommand,
+  type EditorCommandRequest,
+} from "../lib/appCommands";
+import {
   AUTOSAVE_DEBOUNCE_MS,
   canAutosaveDocument,
   initialWorkspaceState,
@@ -213,7 +221,9 @@ export function AppShell() {
   const [mutationBusy, setMutationBusy] = useState(false);
   const [projectBundleBusy, setProjectBundleBusy] = useState(false);
   const [projectBundleError, setProjectBundleError] = useState("");
+  const [editorCommandRequest, setEditorCommandRequest] = useState<EditorCommandRequest | null>(null);
   const restoreAttemptedRef = useRef(false);
+  const editorCommandIdRef = useRef(0);
   const knownPaths = useMemo(() => new Set(markdownPaths(state.tree)), [state.tree]);
   const activeBundleName = useMemo(() => bundleNameFromPath(state.rootPath), [state.rootPath]);
   const linkSuggestions = useMemo(() => {
@@ -367,22 +377,6 @@ export function AppShell() {
     const nextIndex = (currentIndex + direction + documents.length) % documents.length;
     setActiveDocument(documents[nextIndex]);
   }, [setActiveDocument, state.openDocument?.path, state.openDocuments]);
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Tab" && event.ctrlKey && !event.altKey && !event.metaKey) {
-        event.preventDefault();
-        cycleOpenTab(event.shiftKey ? -1 : 1);
-        return;
-      }
-      if (event.key.toLowerCase() === "w" && event.metaKey && !event.ctrlKey && !event.altKey && state.openDocument) {
-        event.preventDefault();
-        closeOpenTab(state.openDocument.path);
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [closeOpenTab, cycleOpenTab, state.openDocument]);
 
   const loadGraphDocuments = useCallback(async (rootPath: string, tree = state.tree) => {
     if (!rootPath || rootPath === SAMPLE_DRAWER_ROOT) {
@@ -1134,6 +1128,144 @@ export function AppShell() {
     }
   }, []);
 
+  const dispatchEditorCommand = useCallback(
+    (command: AppCommand) => {
+      if (!isEditorCommand(command)) return;
+      if (state.mode !== "visual") {
+        setState((current) => ({ ...current, status: "Editor formatting shortcuts require visual mode." }));
+        return;
+      }
+      if (!visualEditor?.isEditable) {
+        setState((current) => ({ ...current, status: "Open a visual editor before using editor shortcuts." }));
+        return;
+      }
+      editorCommandIdRef.current += 1;
+      setEditorCommandRequest({ id: editorCommandIdRef.current, command });
+    },
+    [state.mode, visualEditor],
+  );
+
+  const executeAppCommand = useCallback(
+    async (command: AppCommand) => {
+      if (isEditorCommand(command)) {
+        dispatchEditorCommand(command);
+        return;
+      }
+      switch (command) {
+        case "bundle.open":
+          await openWorkspace();
+          break;
+        case "bundle.create":
+          await createWorkspace();
+          break;
+        case "bundle.refresh":
+          await refreshBundle();
+          break;
+        case "document.new":
+          createFile();
+          break;
+        case "folder.new":
+          createFolder();
+          break;
+        case "item.rename":
+          renameSelected();
+          break;
+        case "item.delete":
+          await deleteSelected();
+          break;
+        case "document.save":
+          await save();
+          break;
+        case "tab.close":
+          if (state.openDocument) closeOpenTab(state.openDocument.path);
+          break;
+        case "tab.next":
+          cycleOpenTab(1);
+          break;
+        case "tab.previous":
+          cycleOpenTab(-1);
+          break;
+        case "mode.visual":
+          setMode("visual");
+          break;
+        case "mode.raw":
+          setMode("raw");
+          break;
+        case "mode.toggle":
+          setMode(state.mode === "visual" ? "raw" : "visual");
+          break;
+        case "graph.toggle":
+          await openGraph();
+          break;
+        case "explorer.toggle":
+          toggleExplorerCollapsed();
+          break;
+        case "validation.toggle":
+          toggleValidationCollapsed();
+          break;
+        case "settings.open":
+          setSettingsOpen(true);
+          break;
+      }
+    },
+    [
+      closeOpenTab,
+      createFile,
+      createFolder,
+      createWorkspace,
+      cycleOpenTab,
+      deleteSelected,
+      dispatchEditorCommand,
+      openGraph,
+      openWorkspace,
+      refreshBundle,
+      renameSelected,
+      save,
+      setMode,
+      state.mode,
+      state.openDocument,
+      toggleExplorerCollapsed,
+      toggleValidationCollapsed,
+    ],
+  );
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      const command = commandFromKeyboardEvent(event, state.mode);
+      if (!command) return;
+      if (command === "tab.close" && !state.openDocument) return;
+      if (shouldPreventDefaultForCommand(command)) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      void executeAppCommand(command);
+    };
+    window.addEventListener("keydown", onKeyDown, { capture: true });
+    return () => window.removeEventListener("keydown", onKeyDown, { capture: true });
+  }, [executeAppCommand, state.mode, state.openDocument]);
+
+  useEffect(() => {
+    if (!isTauriRuntime()) return;
+    let unlisten: (() => void) | null = null;
+    let canceled = false;
+    void import("@tauri-apps/api/event")
+      .then(({ listen }) =>
+        listen("onyxwriter://menu-command", (event) => {
+          const command = commandFromMenuPayload(event.payload);
+          if (command) void executeAppCommand(command);
+        }),
+      )
+      .then((cleanup) => {
+        if (canceled) cleanup();
+        else unlisten = cleanup;
+      })
+      .catch(() => {});
+    return () => {
+      canceled = true;
+      unlisten?.();
+    };
+  }, [executeAppCommand]);
+
   return (
     <div className="app-shell" data-appearance={currentAppearanceMode} data-explorer-collapsed={explorerCollapsed ? "true" : "false"}>
       {themeCss ? <style data-onyx-jsonm-theme>{themeCss}</style> : null}
@@ -1177,6 +1309,7 @@ export function AppShell() {
           onSave={save}
           onInsertImage={insertImage}
           onToggleGraph={openGraph}
+          commandRequest={editorCommandRequest}
           linkSuggestions={linkSuggestions}
         />
         {state.rootPath && graphOpen ? (

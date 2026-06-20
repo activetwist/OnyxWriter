@@ -98,6 +98,21 @@ describe("EditorToolbar link authoring", () => {
       "domains/marketing/campaign-attribution.md",
     ]);
   });
+
+  it("opens the link editor from a command request", async () => {
+    const editor = createEditorMock({ href: "existing.md", selection: { from: 3, to: 9 } });
+    const host = await renderToolbar(editor.instance, [], { commandRequest: { id: 1, command: "editor.link" } });
+
+    expect(input(host)?.value).toBe("existing.md");
+  });
+
+  it("runs visual formatting from a command request", async () => {
+    const editor = createEditorMock();
+    await renderToolbar(editor.instance, [], { commandRequest: { id: 1, command: "editor.bold" } });
+
+    expect(editor.chain.toggleBold).toHaveBeenCalled();
+    expect(editor.chain.run).toHaveBeenCalled();
+  });
 });
 
 async function renderToolbar(
@@ -175,6 +190,16 @@ function createEditorMock({
     extendMarkRange: vi.fn(() => chain),
     setLink: vi.fn(() => chain),
     unsetLink: vi.fn(() => chain),
+    setParagraph: vi.fn(() => chain),
+    toggleHeading: vi.fn(() => chain),
+    toggleBold: vi.fn(() => chain),
+    toggleItalic: vi.fn(() => chain),
+    toggleCode: vi.fn(() => chain),
+    toggleBulletList: vi.fn(() => chain),
+    toggleOrderedList: vi.fn(() => chain),
+    insertTable: vi.fn(() => chain),
+    undo: vi.fn(() => chain),
+    redo: vi.fn(() => chain),
     run: vi.fn(() => true),
   };
   const instance = {

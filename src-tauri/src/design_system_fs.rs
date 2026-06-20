@@ -74,7 +74,8 @@ pub fn list_imported_design_systems(app: AppHandle) -> Result<Vec<StoredDesignSy
             .and_then(|part| part.to_str())
             .unwrap_or_default()
             .to_string();
-        let contents = fs::read_to_string(path).map_err(|e| format!("read imported design system failed: {e}"))?;
+        let contents = fs::read_to_string(path)
+            .map_err(|e| format!("read imported design system failed: {e}"))?;
         rows.push(StoredDesignSystem { id, contents });
     }
     rows.sort_by(|left, right| left.id.cmp(&right.id));
@@ -82,7 +83,11 @@ pub fn list_imported_design_systems(app: AppHandle) -> Result<Vec<StoredDesignSy
 }
 
 #[tauri::command]
-pub fn save_imported_design_system(app: AppHandle, id: String, contents: String) -> Result<(), String> {
+pub fn save_imported_design_system(
+    app: AppHandle,
+    id: String,
+    contents: String,
+) -> Result<(), String> {
     let id = clean_id(&id)?;
     let path = store_dir(&app)?.join(format!("{id}.jsonm"));
     fs::write(path, contents).map_err(|e| format!("save imported design system failed: {e}"))
@@ -104,13 +109,16 @@ pub fn read_design_system_settings(app: AppHandle) -> Result<DesignSystemSetting
     if !path.exists() {
         return Ok(DesignSystemSettings::default());
     }
-    let raw = fs::read_to_string(path).map_err(|e| format!("read design-system settings failed: {e}"))?;
+    let raw =
+        fs::read_to_string(path).map_err(|e| format!("read design-system settings failed: {e}"))?;
     serde_json::from_str(&raw).map_err(|e| format!("parse design-system settings failed: {e}"))
 }
 
 #[tauri::command]
 pub fn write_design_system_settings(app: AppHandle, active_id: String) -> Result<(), String> {
     let settings = DesignSystemSettings { active_id };
-    let raw = serde_json::to_string_pretty(&settings).map_err(|e| format!("serialize design-system settings failed: {e}"))?;
-    fs::write(settings_path(&app)?, raw).map_err(|e| format!("write design-system settings failed: {e}"))
+    let raw = serde_json::to_string_pretty(&settings)
+        .map_err(|e| format!("serialize design-system settings failed: {e}"))?;
+    fs::write(settings_path(&app)?, raw)
+        .map_err(|e| format!("write design-system settings failed: {e}"))
 }
