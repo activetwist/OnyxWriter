@@ -22,6 +22,12 @@ afterEach(() => {
 });
 
 describe("UpdateSettings", () => {
+  it("shows the installed version before checking for updates", async () => {
+    const host = await renderUpdateSettings();
+
+    expect(host.textContent).toContain("Installed version: 0.1.7");
+  });
+
   it("shows a no-update status after checking", async () => {
     vi.mocked(checkForOnyxUpdate).mockResolvedValue({ status: "current" });
     const host = await renderUpdateSettings();

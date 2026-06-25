@@ -216,6 +216,11 @@ button {
   padding: 0 14px;
 }
 
+.document-actions button {
+  background: transparent;
+  box-shadow: none;
+}
+
 .document-actions button:disabled,
 .primary-action:disabled {
   cursor: not-allowed;
@@ -334,8 +339,8 @@ button {
   min-height: 34px;
   border: 0;
   border-radius: var(--ow-radius-sm);
-  background: var(--ow-surface);
-  box-shadow: inset 0 0 0 1px var(--ow-border-strong);
+  background: transparent;
+  box-shadow: none;
   color: var(--ow-text);
   cursor: pointer;
 }
@@ -385,9 +390,12 @@ button {
 }
 
 .bundle-switcher-menu {
-  right: 12px;
-  bottom: 58px;
-  left: 12px;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 0;
+  width: max-content;
+  min-width: min(220px, calc(100vw - 32px));
+  max-width: min(320px, calc(100vw - 32px));
   max-height: 260px;
   overflow: auto;
 }
@@ -614,8 +622,8 @@ button {
   height: 32px;
   border: 0;
   border-radius: var(--ow-radius-sm);
-  background: var(--ow-surface);
-  box-shadow: inset 0 0 0 1px var(--ow-border-strong);
+  background: transparent;
+  box-shadow: none;
   color: var(--ow-text);
   cursor: pointer;
 }
@@ -644,15 +652,38 @@ button {
 
 .toolbar-search {
   display: inline-grid;
-  grid-template-columns: 16px minmax(90px, 150px) minmax(18px, auto) auto auto;
   align-items: center;
   gap: 5px;
   min-height: 32px;
   border-radius: var(--ow-radius-sm);
-  background: var(--ow-surface-alt);
-  box-shadow: inset 0 0 0 1px var(--ow-border);
+  background: transparent;
+  box-shadow: none;
   color: var(--ow-text-muted);
   padding: 0 6px;
+}
+
+.toolbar-search.collapsed {
+  grid-template-columns: 20px;
+  padding: 0;
+}
+
+.toolbar-search.expanded {
+  grid-template-columns: 16px minmax(90px, 150px) minmax(18px, auto) auto auto;
+  background: var(--ow-surface-alt);
+}
+
+.toolbar-search.collapsed input,
+.toolbar-search.collapsed span,
+.toolbar-search.collapsed button:not(.toolbar-search-trigger) {
+  display: none;
+}
+
+.toolbar-search-trigger {
+  display: inline-grid;
+  place-items: center;
+  width: 100%;
+  min-width: var(--ow-chrome-control-md);
+  height: var(--ow-chrome-control-md);
 }
 
 .toolbar-search input {
@@ -1348,6 +1379,60 @@ button {
   box-shadow: var(--ow-shadow-md);
 }
 
+.about-dialog {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: min(520px, 100%);
+  overflow: hidden;
+  border: 1px solid var(--ow-border);
+  border-radius: var(--ow-radius-md);
+  background: var(--ow-surface);
+  color: var(--ow-text);
+  box-shadow: var(--ow-shadow-md);
+}
+
+.about-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ow-space-md);
+  border-bottom: 1px solid var(--ow-border);
+  padding: var(--ow-space-md);
+}
+
+.about-dialog-header h2 {
+  margin: 2px 0 0;
+  font-family: var(--ow-font-headlines);
+  font-size: var(--ow-type-xl);
+}
+
+.about-dialog-body {
+  padding: var(--ow-space-md);
+}
+
+.about-dialog-body dl {
+  display: grid;
+  gap: var(--ow-space-md);
+  margin: 0;
+}
+
+.about-dialog-body div {
+  display: grid;
+  gap: 3px;
+}
+
+.about-dialog-body dt {
+  color: var(--ow-text-muted);
+  font-size: var(--ow-chrome-type-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.about-dialog-body dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
 .settings-header {
   display: flex;
   align-items: center;
@@ -1865,6 +1950,13 @@ button {
   gap: var(--ow-space-sm);
 }
 
+.installed-version {
+  margin-top: 0;
+  color: var(--ow-text-muted);
+  font-family: var(--ow-font-micro);
+  font-size: var(--ow-chrome-type-xs);
+}
+
 .update-card,
 .update-status,
 .update-progress {
@@ -2182,6 +2274,7 @@ button {
 .editor-toolbar svg,
 .validation-panel svg,
 .settings-dialog svg,
+.about-dialog svg,
 .link-editor-popover svg,
 .table-toolbar svg,
 .diagram-actions svg,
@@ -2242,7 +2335,6 @@ button {
 }
 
 .open-button:hover:not(:disabled),
-.primary-action:hover:not(:disabled),
 .settings-button:hover:not(:disabled),
 .icon-button:hover:not(:disabled),
 .bundle-switcher-button:hover:not(:disabled),
@@ -2256,7 +2348,6 @@ button {
 .preview-mode-toggle button:hover,
 .preview-nav button:hover,
 .preview-actions button:hover,
-.apply-theme-button:hover,
 .link-editor-actions button:hover:not(:disabled),
 .table-toolbar-button:hover:not(:disabled),
 .settings-tabs button:hover,
@@ -2264,6 +2355,14 @@ button {
 .bundle-switcher-menu button:hover,
 .tree-context-menu button:not(:disabled):hover {
   background: var(--ow-control-hover);
+}
+
+.primary-action:hover:not(:disabled),
+.apply-theme-button:hover:not(:disabled),
+.preview-actions button:first-child:hover:not(:disabled),
+.preview-nav button:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--ow-accent) 88%, var(--ow-text) 12%);
+  color: var(--ow-accent-text);
 }
 
 button:focus-visible,
@@ -2326,9 +2425,9 @@ textarea:focus-visible {
 }
 
 .bundle-switcher-menu {
-  right: 52px;
-  bottom: 50px;
-  left: 12px;
+  bottom: calc(100% + 8px);
+  left: 0;
+  right: auto;
 }
 
 .settings-button {
@@ -2391,8 +2490,17 @@ textarea:focus-visible {
 }
 
 .toolbar-search {
-  grid-template-columns: var(--ow-chrome-icon-sm) minmax(86px, 136px) minmax(18px, auto) auto auto;
   min-height: var(--ow-chrome-control-md);
+  padding: 0 5px;
+}
+
+.toolbar-search.collapsed {
+  grid-template-columns: var(--ow-chrome-control-md);
+  padding: 0;
+}
+
+.toolbar-search.expanded {
+  grid-template-columns: var(--ow-chrome-icon-sm) minmax(86px, 136px) minmax(18px, auto) auto auto;
   padding: 0 5px;
 }
 

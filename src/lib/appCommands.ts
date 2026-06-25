@@ -1,4 +1,5 @@
 export type AppCommand =
+  | "app.about"
   | "bundle.open"
   | "bundle.create"
   | "bundle.refresh"
@@ -124,6 +125,7 @@ function isRecord(value: unknown): value is MenuCommandPayload {
 
 const APP_COMMANDS = new Set<AppCommand>([
   "bundle.open",
+  "app.about",
   "bundle.create",
   "bundle.refresh",
   "document.new",

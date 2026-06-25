@@ -3,6 +3,7 @@ import type { Editor } from "@tiptap/react";
 import { convertFileSrc } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { X } from "lucide-react";
+import { AboutDialog } from "./AboutDialog";
 import { AppErrorBoundary } from "./AppErrorBoundary";
 import { DesignSystemSettings } from "./DesignSystemSettings";
 import { DrawerSettings } from "./DrawerSettings";
@@ -234,6 +235,7 @@ function remapExplorerSelectionPath(path: string, plan: DrawerMutationPlan): str
 export function AppShell() {
   const [state, setState] = useState<AppWorkspaceState>(initialWorkspaceState);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [aboutOpen, setAboutOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState("drawers");
   const [visualEditor, setVisualEditor] = useState<Editor | null>(null);
   const [showSystemFiles, setShowSystemFiles] = useState(() => localStorage.getItem("onyxwriter.showSystemFiles") === "true");
@@ -1289,6 +1291,9 @@ export function AppShell() {
         return;
       }
       switch (command) {
+        case "app.about":
+          setAboutOpen(true);
+          break;
         case "bundle.open":
           await openWorkspace();
           break;
@@ -1374,6 +1379,7 @@ export function AppShell() {
       setMode,
       state.mode,
       state.openDocument,
+      state.openDocuments,
       toggleExplorerCollapsed,
       toggleValidationCollapsed,
     ],
@@ -1578,6 +1584,7 @@ export function AppShell() {
           <div className="settings-loading">Loading design systems.</div>
         )}
       </SettingsDialog>
+      <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
       {pathInputRequest ? (
         <div className="mutation-backdrop" role="presentation">
           <form

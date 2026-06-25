@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CheckCircle2, Download, RefreshCw, ShieldAlert } from "lucide-react";
 import { checkForOnyxUpdate, classifyUpdaterFailure, type OnyxUpdate, type UpdateProgress, type UpdaterFailure } from "../lib/updater/api";
+import { ONYX_APP_VERSION } from "../lib/appInfo";
 
 type UpdateStatus = "idle" | "checking" | "current" | "available" | "downloading" | "installed" | "unsupported" | "error";
 
@@ -67,6 +68,7 @@ export function UpdateSettings() {
       <section className="settings-section">
         <h3>Application Updates</h3>
         <p>Onyx Writer can check GitHub Releases for signed desktop updates when running as the installed app.</p>
+        <p className="installed-version">Installed version: {ONYX_APP_VERSION}</p>
         <div className="update-actions">
           <button className="primary-action" type="button" onClick={checkForUpdates} disabled={status === "checking" || status === "downloading"}>
             <RefreshCw size={16} />

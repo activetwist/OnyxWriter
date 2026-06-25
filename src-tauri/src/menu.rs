@@ -41,7 +41,14 @@ fn app_menu<R: Runtime>(manager: &impl Manager<R>) -> tauri::Result<tauri::menu:
     #[cfg(target_os = "macos")]
     {
         return SubmenuBuilder::new(manager, "Onyx Writer")
-            .item(&PredefinedMenuItem::about(manager, None, None)?)
+            .item(&command_item(
+                manager,
+                &CommandItem {
+                    id: "app.about",
+                    label: "About Onyx Writer",
+                    accelerator: None,
+                },
+            )?)
             .separator()
             .item(&PredefinedMenuItem::services(manager, None)?)
             .separator()
@@ -54,7 +61,14 @@ fn app_menu<R: Runtime>(manager: &impl Manager<R>) -> tauri::Result<tauri::menu:
 
     #[cfg(not(target_os = "macos"))]
     SubmenuBuilder::new(manager, "Onyx Writer")
-        .item(&PredefinedMenuItem::about(manager, None, None)?)
+        .item(&command_item(
+            manager,
+            &CommandItem {
+                id: "app.about",
+                label: "About Onyx Writer",
+                accelerator: None,
+            },
+        )?)
         .separator()
         .item(&PredefinedMenuItem::quit(manager, None)?)
         .build()

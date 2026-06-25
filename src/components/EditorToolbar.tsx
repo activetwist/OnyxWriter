@@ -84,7 +84,9 @@ export function EditorToolbar({
   const [, setToolbarVersion] = useState(0);
   const [linkEditor, setLinkEditor] = useState<LinkEditorState>({ open: false, href: "", range: null });
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchExpanded, setSearchExpanded] = useState(false);
   const linkInputRef = useRef<HTMLInputElement | null>(null);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!visualEditor) return;
@@ -102,9 +104,15 @@ export function EditorToolbar({
     window.requestAnimationFrame(() => linkInputRef.current?.focus());
   }, [linkEditor.open]);
 
+  useEffect(() => {
+    if (!searchExpanded) return;
+    window.requestAnimationFrame(() => searchInputRef.current?.focus());
+  }, [searchExpanded]);
+
   const canUseVisualCommands = mode === "visual" && Boolean(visualEditor) && visualEditor?.isEditable;
   const saveLabel = saveStatusLabel(saveStatus, dirty);
   const searchCount = searchQuery ? countMatches(searchSource, searchQuery) : 0;
+  const searchActive = searchExpanded || Boolean(searchQuery);
   const runSearch = (direction: "forward" | "backward" = "forward") => {
     const query = searchQuery.trim();
     const nativeFind = (window as typeof window & { find?: (text: string, caseSensitive?: boolean, backwards?: boolean, wrap?: boolean, wholeWord?: boolean, searchInFrames?: boolean, showDialog?: boolean) => boolean }).find;
@@ -322,18 +330,32 @@ export function EditorToolbar({
         </div>
         <div className="editor-toolbar-utilities">
           <div
-            className="toolbar-search"
+            className={`toolbar-search ${searchActive ? "expanded" : "collapsed"}`}
             role="search"
             onKeyDown={(event) => {
               if (event.key !== "Enter") return;
               event.preventDefault();
               runSearch(event.shiftKey ? "backward" : "forward");
             }}
+            onBlur={(event) => {
+              if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+              if (!searchQuery) setSearchExpanded(false);
+            }}
           >
-            <Search size={14} aria-hidden="true" />
+            <button
+              className="toolbar-search-trigger"
+              type="button"
+              onClick={() => setSearchExpanded(true)}
+              aria-label="Search current document"
+              title="Search"
+            >
+              <Search size={14} aria-hidden="true" />
+            </button>
             <input
+              ref={searchInputRef}
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.currentTarget.value)}
+              onFocus={() => setSearchExpanded(true)}
               placeholder="Search"
               aria-label="Search current document"
             />
