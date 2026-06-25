@@ -80,7 +80,7 @@ button {
 
 .app-shell {
   display: grid;
-  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
   height: 100vh;
   min-height: 0;
   overflow: hidden;
@@ -670,6 +670,11 @@ button {
 .toolbar-search.expanded {
   grid-template-columns: 16px minmax(90px, 150px) minmax(18px, auto) auto auto;
   background: var(--ow-surface-alt);
+}
+
+.toolbar-search.expanded:focus-within {
+  background: var(--ow-surface-alt);
+  box-shadow: inset 0 0 0 1px var(--ow-border);
 }
 
 .toolbar-search.collapsed input,
@@ -2365,12 +2370,28 @@ button {
   color: var(--ow-accent-text);
 }
 
+.toolbar-icon-button.active:hover:not(:disabled) {
+  background: var(--ow-link-surface);
+  color: var(--ow-link);
+}
+
+.segmented-control button.active:hover:not(:disabled),
+.preview-mode-toggle button.active:hover:not(:disabled),
+.settings-tabs button.active:hover:not(:disabled) {
+  background: var(--ow-text);
+  color: var(--ow-surface);
+}
+
 button:focus-visible,
 [role="button"]:focus-visible,
 input:focus-visible,
 textarea:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--ow-focus) 58%, transparent);
   outline-offset: 2px;
+}
+
+.toolbar-search input:focus-visible {
+  outline: 0;
 }
 
 .open-button,

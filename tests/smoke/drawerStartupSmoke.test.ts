@@ -45,10 +45,10 @@ describe("drawer startup smoke", () => {
     expect(launcherSource).toContain("No bundle open");
   });
 
-  it("restores the left rail width while compacting toolbar utilities", () => {
+  it("keeps the left rail compact while preserving scrollable toolbar utilities", () => {
     const styles = readFileSync("src/styles.css", "utf8");
     const toolbarSource = readFileSync("src/components/EditorToolbar.tsx", "utf8");
-    expect(styles).toContain("grid-template-columns: minmax(260px, 320px) minmax(0, 1fr)");
+    expect(styles).toContain("grid-template-columns: minmax(220px, 280px) minmax(0, 1fr)");
     expect(styles).toContain("flex-wrap: nowrap");
     expect(styles).toContain("overflow-x: auto");
     expect(toolbarSource).toContain('aria-label="Visual mode"');
