@@ -27,8 +27,11 @@ import {
   moveWorkspacePath,
   readWorkspaceFile,
   renameWorkspacePath,
+  revealWorkspacePath,
   selectAndImportDrawerImage,
+  selectExportFile,
   selectWorkspaceDirectory,
+  writeExportFile,
   writeWorkspaceFile,
 } from "../lib/workspace/api";
 import { defaultConceptContents, ensureMarkdownPath } from "../lib/workspace/operations";
@@ -179,6 +182,35 @@ function activeDocumentFrom(documents: OpenDocumentState[], path: string): OpenD
   return documents.find((document) => document.path === path) ?? documents[0] ?? null;
 }
 
+function defaultExportFilename(path: string): string {
+  const name = path.replace(/\\/g, "/").split("/").filter(Boolean).pop() || "onyx-document.md";
+  return name.endsWith(".md") ? name : `${name}.md`;
+}
+
+function exportDocumentContents(raw: string, destinationPath: string): string {
+  const extension = destinationPath.replace(/\\/g, "/").split(".").pop()?.toLowerCase();
+  if (extension === "txt") return okfBodyForExport(raw);
+  if (extension === "rtf") return markdownToPlainRtf(okfBodyForExport(raw));
+  return raw;
+}
+
+function okfBodyForExport(raw: string): string {
+  try {
+    return parseOkfDocument("export.md", raw).body.trimStart();
+  } catch {
+    return raw;
+  }
+}
+
+function markdownToPlainRtf(markdown: string): string {
+  const escaped = markdown
+    .replace(/\\/g, "\\\\")
+    .replace(/{/g, "\\{")
+    .replace(/}/g, "\\}")
+    .replace(/\r?\n/g, "\\par\n");
+  return `{\\rtf1\\ansi\\deff0\n${escaped}\n}`;
+}
+
 function parentFolderPath(path: string): string {
   return path.split("/").slice(0, -1).join("/");
 }
@@ -227,6 +259,7 @@ export function AppShell() {
   const [splitDocument, setSplitDocument] = useState<OpenDocumentState | null>(null);
   const restoreAttemptedRef = useRef(false);
   const editorCommandIdRef = useRef(0);
+  const executeAppCommandRef = useRef<((command: AppCommand) => Promise<void>) | null>(null);
   const knownPaths = useMemo(() => new Set(markdownPaths(state.tree)), [state.tree]);
   const activeBundleName = useMemo(() => bundleNameFromPath(state.rootPath), [state.rootPath]);
   const linkSuggestions = useMemo(() => {
@@ -788,6 +821,50 @@ export function AppShell() {
     await saveSnapshot(state.rootPath, state.openDocument.path, state.openDocument.raw, true);
   }, [saveSnapshot, state.openDocument, state.rootPath]);
 
+  const shareActiveDocument = useCallback(async () => {
+    if (!state.openDocument || !state.rootPath || state.rootPath === SAMPLE_DRAWER_ROOT) {
+      setState((current) => ({ ...current, status: "Open a saved bundle document before sharing." }));
+      return;
+    }
+    const document = state.openDocument;
+    if (document.dirty) await saveSnapshot(state.rootPath, document.path, document.raw, true);
+    try {
+      await revealWorkspacePath(state.rootPath, document.path);
+      setState((current) => ({ ...current, status: "Opened document location for sharing." }));
+    } catch (error) {
+      setState((current) => ({
+        ...current,
+        status: error instanceof Error ? `Share failed: ${error.message}` : `Share failed: ${String(error)}`,
+      }));
+    }
+  }, [saveSnapshot, state.openDocument, state.rootPath]);
+
+  const exportActiveDocument = useCallback(async () => {
+    if (!state.openDocument) {
+      setState((current) => ({ ...current, status: "Open a document before exporting." }));
+      return;
+    }
+    if (!isTauriRuntime()) {
+      setState((current) => ({ ...current, status: "Export is available in the installed app." }));
+      return;
+    }
+    const document = state.openDocument;
+    try {
+      const destination = await selectExportFile(defaultExportFilename(document.path));
+      if (!destination) {
+        setState((current) => ({ ...current, status: "Export canceled." }));
+        return;
+      }
+      await writeExportFile(destination, exportDocumentContents(document.raw, destination));
+      setState((current) => ({ ...current, status: `Exported ${document.path}.` }));
+    } catch (error) {
+      setState((current) => ({
+        ...current,
+        status: error instanceof Error ? `Export failed: ${error.message}` : `Export failed: ${String(error)}`,
+      }));
+    }
+  }, [state.openDocument]);
+
   const refreshBundle = useCallback(async () => {
     if (!state.rootPath) {
       setState((current) => ({ ...current, status: "Open a bundle before refreshing." }));
@@ -1229,10 +1306,10 @@ export function AppShell() {
           else setState((current) => ({ ...current, status: "No recent document in this session." }));
           break;
         case "document.share":
-          setState((current) => ({ ...current, status: "Share is not implemented in this alpha." }));
+          await shareActiveDocument();
           break;
         case "document.export":
-          setState((current) => ({ ...current, status: "Export is not implemented in this alpha." }));
+          await exportActiveDocument();
           break;
         case "folder.new":
           createFolder();
@@ -1286,11 +1363,13 @@ export function AppShell() {
       cycleOpenTab,
       deleteSelected,
       dispatchEditorCommand,
+      exportActiveDocument,
       openGraph,
       openWorkspace,
       refreshBundle,
       renameSelected,
       save,
+      shareActiveDocument,
       setActiveDocument,
       setMode,
       state.mode,
@@ -1299,6 +1378,10 @@ export function AppShell() {
       toggleValidationCollapsed,
     ],
   );
+
+  useEffect(() => {
+    executeAppCommandRef.current = executeAppCommand;
+  }, [executeAppCommand]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -1323,7 +1406,7 @@ export function AppShell() {
       .then(({ listen }) =>
         listen("onyxwriter://menu-command", (event) => {
           const command = commandFromMenuPayload(event.payload);
-          if (command) void executeAppCommand(command);
+          if (command) void executeAppCommandRef.current?.(command);
         }),
       )
       .then((cleanup) => {
@@ -1335,7 +1418,7 @@ export function AppShell() {
       canceled = true;
       unlisten?.();
     };
-  }, [executeAppCommand]);
+  }, []);
 
   return (
     <div className="app-shell" data-appearance={currentAppearanceMode} data-explorer-collapsed={explorerCollapsed ? "true" : "false"}>

@@ -38,6 +38,17 @@
   --ow-type-lg: var(--onyx-typography-size-lg, 18px);
   --ow-type-xl: var(--onyx-typography-size-xl, 24px);
   --ow-chrome-scale: 0.9;
+  --ow-chrome-type-xs: calc(var(--ow-type-xs) * var(--ow-chrome-scale));
+  --ow-chrome-type-sm: calc(var(--ow-type-sm) * var(--ow-chrome-scale));
+  --ow-chrome-type-md: calc(var(--ow-type-md) * var(--ow-chrome-scale));
+  --ow-chrome-type-lg: calc(var(--ow-type-lg) * var(--ow-chrome-scale));
+  --ow-chrome-icon-sm: 13px;
+  --ow-chrome-icon-md: 14px;
+  --ow-chrome-icon-lg: 15px;
+  --ow-chrome-control-sm: 27px;
+  --ow-chrome-control-md: 29px;
+  --ow-chrome-control-lg: 31px;
+  --ow-control-hover: color-mix(in srgb, var(--ow-link-surface) 62%, transparent);
   --ow-line-normal: var(--onyx-typography-line-normal, 1.62);
   color: var(--ow-text);
   background: var(--ow-bg);
@@ -2150,6 +2161,285 @@ button {
 
 .graph-node.is-root .graph-node-label-halo {
   stroke-width: 5px;
+}
+
+/* Compact, borderless app chrome. Document/editor content keeps its own typography. */
+.workspace-sidebar,
+.document-tabs,
+.editor-toolbar,
+.validation-panel,
+.settings-dialog,
+.link-editor-popover,
+.table-toolbar,
+.diagram-actions,
+.graph-actions,
+.status-bar {
+  font-size: var(--ow-chrome-type-sm);
+}
+
+.workspace-sidebar svg,
+.document-tabs svg,
+.editor-toolbar svg,
+.validation-panel svg,
+.settings-dialog svg,
+.link-editor-popover svg,
+.table-toolbar svg,
+.diagram-actions svg,
+.graph-actions svg {
+  width: var(--ow-chrome-icon-md);
+  height: var(--ow-chrome-icon-md);
+}
+
+.tree-disclosure svg,
+.toolbar-search svg {
+  width: var(--ow-chrome-icon-sm);
+  height: var(--ow-chrome-icon-sm);
+}
+
+.sidebar-top {
+  padding: 14px 12px 6px;
+}
+
+.sidebar-top h1 {
+  font-size: var(--ow-chrome-type-lg, calc(var(--ow-type-lg) * var(--ow-chrome-scale)));
+}
+
+.sidebar-top p,
+.document-tabs-empty,
+.bundle-switcher-empty,
+.panel-heading,
+.diagram-title span,
+.graph-title span {
+  font-size: var(--ow-chrome-type-xs);
+}
+
+.open-button,
+.primary-action,
+.settings-button,
+.icon-button,
+.bundle-switcher-button,
+.document-actions button,
+.document-tab,
+.segmented-control,
+.segmented-control button,
+.toolbar-icon-button,
+.toolbar-search,
+.diagram-actions button,
+.graph-actions button,
+.panel-heading-button,
+.preview-mode-toggle button,
+.preview-nav button,
+.preview-actions button,
+.apply-theme-button,
+.link-editor-actions button,
+.table-toolbar-button,
+.settings-tabs button,
+.recent-workspace-row,
+.bundle-switcher-menu button,
+.tree-context-menu button {
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.open-button:hover:not(:disabled),
+.primary-action:hover:not(:disabled),
+.settings-button:hover:not(:disabled),
+.icon-button:hover:not(:disabled),
+.bundle-switcher-button:hover:not(:disabled),
+.document-actions button:hover:not(:disabled),
+.document-tab:hover,
+.segmented-control button:hover:not(:disabled),
+.toolbar-icon-button:hover:not(:disabled),
+.toolbar-search button:hover:not(:disabled),
+.diagram-actions button:hover:not(:disabled),
+.graph-actions button:hover:not(:disabled),
+.preview-mode-toggle button:hover,
+.preview-nav button:hover,
+.preview-actions button:hover,
+.apply-theme-button:hover,
+.link-editor-actions button:hover:not(:disabled),
+.table-toolbar-button:hover:not(:disabled),
+.settings-tabs button:hover,
+.recent-workspace-row:hover,
+.bundle-switcher-menu button:hover,
+.tree-context-menu button:not(:disabled):hover {
+  background: var(--ow-control-hover);
+}
+
+button:focus-visible,
+[role="button"]:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--ow-focus) 58%, transparent);
+  outline-offset: 2px;
+}
+
+.open-button,
+.primary-action,
+.settings-button,
+.icon-button,
+.bundle-switcher-button,
+.document-actions button {
+  min-height: var(--ow-chrome-control-lg);
+}
+
+.open-button,
+.primary-action,
+.document-actions button {
+  height: var(--ow-chrome-control-lg);
+}
+
+.drawer-command-row .icon-button,
+.drawer-command-row .open-button {
+  min-height: var(--ow-chrome-control-lg);
+  height: var(--ow-chrome-control-lg);
+}
+
+.drawer-command-row .icon-button,
+.validation-panel.collapsed .icon-button {
+  flex-basis: var(--ow-chrome-control-lg);
+  width: var(--ow-chrome-control-lg);
+}
+
+.document-actions {
+  gap: 6px;
+  padding: 0 12px;
+}
+
+.sidebar-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px 12px;
+}
+
+.bundle-switcher {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.bundle-switcher-button {
+  grid-template-columns: var(--ow-chrome-icon-md) minmax(0, 1fr);
+  gap: 7px;
+  min-height: var(--ow-chrome-control-lg);
+  padding: 0 8px;
+}
+
+.bundle-switcher-menu {
+  right: 52px;
+  bottom: 50px;
+  left: 12px;
+}
+
+.settings-button {
+  flex: 0 0 var(--ow-chrome-control-lg);
+  width: var(--ow-chrome-control-lg);
+  padding: 0;
+}
+
+.settings-button span {
+  display: none;
+}
+
+.document-tabs {
+  min-height: 34px;
+  padding: 4px 9px 0;
+}
+
+.document-tab {
+  grid-template-columns: 7px minmax(34px, 1fr) 16px;
+  min-width: 86px;
+  height: 29px;
+  padding: 0 6px;
+}
+
+.document-tab.active,
+.toolbar-icon-button.active,
+.segmented-control button.active,
+.preview-mode-toggle button.active,
+.settings-tabs button.active {
+  box-shadow: none;
+}
+
+.editor-toolbar {
+  min-height: 45px;
+  gap: 10px;
+  padding: 7px 12px;
+}
+
+.editor-toolbar-left,
+.format-toolbar,
+.editor-toolbar-utilities {
+  gap: 7px;
+}
+
+.segmented-control {
+  gap: 3px;
+  padding: 2px;
+}
+
+.segmented-control button,
+.toolbar-icon-button,
+.save-action {
+  flex-basis: var(--ow-chrome-control-md);
+  width: var(--ow-chrome-control-md);
+  height: var(--ow-chrome-control-md);
+}
+
+.toolbar-separator {
+  height: 21px;
+}
+
+.toolbar-search {
+  grid-template-columns: var(--ow-chrome-icon-sm) minmax(86px, 136px) minmax(18px, auto) auto auto;
+  min-height: var(--ow-chrome-control-md);
+  padding: 0 5px;
+}
+
+.toolbar-search input,
+.toolbar-search span,
+.toolbar-search button,
+.link-editor-popover label,
+.link-editor-actions button,
+.table-toolbar-button,
+.settings-tabs button {
+  font-size: var(--ow-chrome-type-xs);
+}
+
+.diagram-actions button,
+.graph-actions button,
+.link-editor-popover input,
+.link-editor-actions button {
+  height: var(--ow-chrome-control-md);
+}
+
+.diagram-actions button,
+.graph-actions button {
+  width: var(--ow-chrome-control-md);
+}
+
+.link-editor-popover {
+  padding: 7px 14px;
+}
+
+.link-editor-popover input {
+  border-color: transparent;
+  padding: 0 9px;
+}
+
+.table-toolbar {
+  gap: 5px;
+  padding: 7px 14px;
+}
+
+.table-toolbar-button {
+  min-height: var(--ow-chrome-control-sm);
+  padding: 0 8px;
+}
+
+.settings-tabs button {
+  min-height: var(--ow-chrome-control-md);
+  padding: 0 11px;
 }
 
 @media (max-width: 840px) {

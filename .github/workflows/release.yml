@@ -20,12 +20,19 @@ jobs:
           - name: macOS Apple Silicon
             platform: macos-latest
             args: "--target aarch64-apple-darwin"
+            rustTarget: "aarch64-apple-darwin"
           - name: Linux x64 packages
             platform: ubuntu-22.04
             args: "--bundles deb,rpm"
+            rustTarget: ""
           - name: Windows x64 packages
             platform: windows-latest
             args: "--target x86_64-pc-windows-msvc"
+            rustTarget: "x86_64-pc-windows-msvc"
+          - name: Windows ARM64 packages
+            platform: windows-11-arm
+            args: "--target aarch64-pc-windows-msvc"
+            rustTarget: "aarch64-pc-windows-msvc"
 
     steps:
       - uses: actions/checkout@v4
@@ -52,13 +59,9 @@ jobs:
       - name: Set up Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Add macOS Apple Silicon target
-        if: matrix.platform == 'macos-latest'
-        run: rustup target add aarch64-apple-darwin
-
-      - name: Add Windows x64 target
-        if: matrix.platform == 'windows-latest'
-        run: rustup target add x86_64-pc-windows-msvc
+      - name: Add Rust target
+        if: matrix.rustTarget != ''
+        run: rustup target add ${{ matrix.rustTarget }}
 
       - name: Cache Rust
         uses: swatinem/rust-cache@v2

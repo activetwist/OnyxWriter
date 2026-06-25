@@ -24,8 +24,11 @@ const workspaceApi = vi.hoisted(() => ({
   moveWorkspacePath: vi.fn(() => Promise.resolve()),
   readWorkspaceFile: vi.fn(() => Promise.resolve("---\ntype: Concept\n---\n\n# Test\n")),
   renameWorkspacePath: vi.fn(() => Promise.resolve("")),
+  revealWorkspacePath: vi.fn(() => Promise.resolve()),
   selectAndImportDrawerImage: vi.fn(() => Promise.resolve(null)),
+  selectExportFile: vi.fn(() => Promise.resolve(null)),
   selectWorkspaceDirectory: vi.fn(() => Promise.resolve("/tmp/project")),
+  writeExportFile: vi.fn(() => Promise.resolve()),
   writeWorkspaceFile: vi.fn(() => Promise.resolve()),
 }));
 

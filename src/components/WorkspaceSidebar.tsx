@@ -335,7 +335,6 @@ export function WorkspaceSidebar({
                     }}
                   >
                     <span>{workspace.name}</span>
-                    <small>{workspace.path}</small>
                   </button>
                 ))
               ) : (
@@ -344,7 +343,7 @@ export function WorkspaceSidebar({
             </div>
           ) : null}
         </div>
-        <button className="settings-button" type="button" onClick={onOpenSettings} aria-label="Open settings">
+        <button className="settings-button" type="button" onClick={onOpenSettings} aria-label="Open settings" title="Settings">
           <Settings size={17} />
           <span>Settings</span>
         </button>

@@ -3,6 +3,7 @@ use std::{
     fs,
     io::Write,
     path::{Component, Path, PathBuf},
+    process::Command,
 };
 
 #[derive(Serialize)]
@@ -362,6 +363,75 @@ pub fn write_text_file(
         file.sync_all().map_err(|e| format!("sync failed: {e}"))?;
     }
     fs::rename(tmp, path).map_err(|e| format!("replace failed: {e}"))
+}
+
+#[tauri::command]
+pub fn write_export_file(destination_path: String, contents: String) -> Result<(), String> {
+    let path = PathBuf::from(destination_path);
+    if !path.is_absolute() {
+        return Err("export destination must be an absolute path".into());
+    }
+    if path.exists() && path.is_dir() {
+        return Err("export destination must be a file".into());
+    }
+    let extension = path
+        .extension()
+        .and_then(|value| value.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    if !matches!(extension.as_str(), "md" | "txt" | "rtf") {
+        return Err("export supports .md, .txt, and .rtf files".into());
+    }
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent).map_err(|e| format!("create export folder failed: {e}"))?;
+    }
+    let tmp_extension = if extension.is_empty() {
+        "tmp".to_string()
+    } else {
+        format!("{extension}.tmp")
+    };
+    let tmp = path.with_extension(tmp_extension);
+    {
+        let mut file = fs::File::create(&tmp).map_err(|e| format!("export temp write failed: {e}"))?;
+        file.write_all(contents.as_bytes())
+            .map_err(|e| format!("export write failed: {e}"))?;
+        file.sync_all()
+            .map_err(|e| format!("export sync failed: {e}"))?;
+    }
+    fs::rename(tmp, path).map_err(|e| format!("export replace failed: {e}"))
+}
+
+#[tauri::command]
+pub fn reveal_path(root: String, relative_path: String) -> Result<(), String> {
+    let path = resolve_under_root(&root, &relative_path)?;
+    if !path.exists() {
+        return Err("document not found".into());
+    }
+
+    #[cfg(target_os = "macos")]
+    let status = Command::new("open")
+        .arg("-R")
+        .arg(&path)
+        .status()
+        .map_err(|e| format!("share reveal failed: {e}"))?;
+
+    #[cfg(target_os = "windows")]
+    let status = Command::new("explorer")
+        .arg(format!("/select,{}", path.to_string_lossy()))
+        .status()
+        .map_err(|e| format!("share reveal failed: {e}"))?;
+
+    #[cfg(all(unix, not(target_os = "macos")))]
+    let status = Command::new("xdg-open")
+        .arg(path.parent().unwrap_or_else(|| Path::new("/")))
+        .status()
+        .map_err(|e| format!("share reveal failed: {e}"))?;
+
+    if status.success() {
+        Ok(())
+    } else {
+        Err("share reveal command failed".into())
+    }
 }
 
 #[tauri::command]

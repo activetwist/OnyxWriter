@@ -1,5 +1,5 @@
 import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
+import { open, save as saveDialog } from "@tauri-apps/plugin-dialog";
 import type { WorkspaceFolderInspection } from "./projectDetection";
 import type { WorkspaceEntry } from "./types";
 
@@ -48,6 +48,28 @@ export async function readWorkspaceFile(root: string, relativePath: string): Pro
 
 export async function writeWorkspaceFile(root: string, relativePath: string, contents: string): Promise<void> {
   await invoke("write_text_file", { root, relativePath, contents });
+}
+
+export async function selectExportFile(defaultPath: string): Promise<string | null> {
+  if (!isTauriRuntime()) return null;
+  const selected = await saveDialog({
+    title: "Export Document",
+    defaultPath,
+    filters: [
+      { name: "Markdown", extensions: ["md"] },
+      { name: "Plain Text", extensions: ["txt"] },
+      { name: "Rich Text", extensions: ["rtf"] },
+    ],
+  });
+  return typeof selected === "string" ? selected : null;
+}
+
+export async function writeExportFile(destinationPath: string, contents: string): Promise<void> {
+  await invoke("write_export_file", { destinationPath, contents });
+}
+
+export async function revealWorkspacePath(root: string, relativePath: string): Promise<void> {
+  await invoke("reveal_path", { root, relativePath });
 }
 
 export async function createWorkspaceFolder(root: string, relativePath: string): Promise<void> {

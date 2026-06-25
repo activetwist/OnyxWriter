@@ -9,7 +9,7 @@ use design_system_fs::{
 use okf_fs::{
     create_folder, create_markdown_file, delete_path, directory_has_entries, import_image_asset,
     initialize_workspace, inspect_workspace_folder, list_workspace, move_path, read_text_file,
-    rename_path, write_text_file,
+    rename_path, reveal_path, write_export_file, write_text_file,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -30,6 +30,8 @@ pub fn run() {
             import_image_asset,
             read_text_file,
             write_text_file,
+            write_export_file,
+            reveal_path,
             create_folder,
             create_markdown_file,
             rename_path,

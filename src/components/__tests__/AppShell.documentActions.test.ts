@@ -5,6 +5,17 @@ import type { WorkspaceEntry } from "../../lib/workspace/types";
 
 const files = new Map<string, string>();
 
+const tauriEvent = vi.hoisted(() => {
+  const listeners: Array<(event: { payload: unknown }) => void> = [];
+  return {
+    listeners,
+    listen: vi.fn((_eventName: string, callback: (event: { payload: unknown }) => void) => {
+      listeners.push(callback);
+      return Promise.resolve(() => {});
+    }),
+  };
+});
+
 const workspaceApi = vi.hoisted(() => ({
   createWorkspaceFolder: vi.fn(() => Promise.resolve()),
   createWorkspaceMarkdownFile: vi.fn((_: string, relativePath: string, contents: string) => {
@@ -25,8 +36,11 @@ const workspaceApi = vi.hoisted(() => ({
     return contents === undefined ? Promise.reject(new Error(`Missing ${relativePath}`)) : Promise.resolve(contents);
   }),
   renameWorkspacePath: vi.fn(() => Promise.resolve("")),
+  revealWorkspacePath: vi.fn(() => Promise.resolve()),
   selectAndImportDrawerImage: vi.fn(() => Promise.resolve(null)),
+  selectExportFile: vi.fn(() => Promise.resolve("/tmp/orders.txt")),
   selectWorkspaceDirectory: vi.fn(() => Promise.resolve("/tmp/Onyx-Test")),
+  writeExportFile: vi.fn(() => Promise.resolve()),
   writeWorkspaceFile: vi.fn((_: string, relativePath: string, contents: string) => {
     files.set(relativePath, contents);
     return Promise.resolve();
@@ -34,6 +48,10 @@ const workspaceApi = vi.hoisted(() => ({
 }));
 
 vi.mock("../../lib/workspace/api", () => workspaceApi);
+
+vi.mock("@tauri-apps/api/event", () => ({
+  listen: tauriEvent.listen,
+}));
 
 vi.mock("@tauri-apps/plugin-opener", () => ({
   openUrl: vi.fn(() => Promise.resolve()),
@@ -45,6 +63,7 @@ vi.mock("../MermaidDiagram", () => ({
 
 beforeEach(() => {
   files.clear();
+  tauriEvent.listeners.length = 0;
   files.set("tables/orders.md", "---\ntype: Concept\ntitle: Orders\n---\n\n# Orders\n");
   const storage = new Map<string, string>();
   const localStorageMock = {
@@ -137,6 +156,37 @@ describe("AppShell document actions", () => {
     expect(host.textContent).toContain("Rename bundle item");
     expect(window.prompt).not.toHaveBeenCalled();
   });
+
+  it("exports the active document through the native menu command", async () => {
+    const host = await renderOpenBundle();
+
+    await act(async () => {
+      rowByTitle(host, "tables/orders.md").click();
+    });
+    await waitFor(() => host.textContent?.includes("Orders"));
+
+    await emitMenuCommand("document.export");
+
+    await waitFor(() => workspaceApi.selectExportFile.mock.calls.length);
+    expect(workspaceApi.selectExportFile).toHaveBeenCalledWith("orders.md");
+    expect(workspaceApi.writeExportFile).toHaveBeenCalledWith("/tmp/orders.txt", "# Orders\n");
+    expect(host.textContent).toContain("Exported tables/orders.md.");
+  });
+
+  it("reveals the active document for platform sharing through the native menu command", async () => {
+    const host = await renderOpenBundle();
+
+    await act(async () => {
+      rowByTitle(host, "tables/orders.md").click();
+    });
+    await waitFor(() => host.textContent?.includes("Orders"));
+
+    await emitMenuCommand("document.share");
+
+    await waitFor(() => workspaceApi.revealWorkspacePath.mock.calls.length);
+    expect(workspaceApi.revealWorkspacePath).toHaveBeenCalledWith("/tmp/Onyx-Test", "tables/orders.md");
+    expect(host.textContent).toContain("Opened document location for sharing.");
+  });
 });
 
 async function renderOpenBundle(): Promise<HTMLDivElement> {
@@ -169,6 +219,15 @@ async function submitDialog(host: HTMLElement): Promise<void> {
     const button = findButtonByText(host, "Create") ?? findButtonByText(host, "Preview Rename");
     if (!button) throw new Error("Submit button not found.");
     button.click();
+  });
+}
+
+async function emitMenuCommand(command: string): Promise<void> {
+  await waitFor(() => tauriEvent.listeners.length);
+  await act(async () => {
+    for (const listener of tauriEvent.listeners) {
+      listener({ payload: { command } });
+    }
   });
 }
 

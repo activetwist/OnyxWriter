@@ -37,8 +37,11 @@ vi.mock("../../lib/workspace/api", () => ({
     return Promise.resolve(contents);
   }),
   renameWorkspacePath: vi.fn(),
+  revealWorkspacePath: vi.fn(() => Promise.resolve()),
   selectAndImportDrawerImage: vi.fn(() => Promise.resolve(null)),
+  selectExportFile: vi.fn(() => Promise.resolve(null)),
   selectWorkspaceDirectory: vi.fn(() => Promise.resolve(null)),
+  writeExportFile: vi.fn(() => Promise.resolve()),
   writeWorkspaceFile: vi.fn(() => Promise.resolve()),
 }));
 
