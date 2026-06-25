@@ -19,6 +19,8 @@ import {
   Redo2,
   RefreshCw,
   Save,
+  Search,
+  Strikethrough,
   Table2,
   Undo2,
 } from "lucide-react";
@@ -45,6 +47,7 @@ interface EditorToolbarProps {
   onToggleGraph: () => void;
   commandRequest?: EditorCommandRequest | null;
   linkSuggestions?: LinkSuggestion[];
+  searchSource?: string;
 }
 
 export interface LinkSuggestion {
@@ -76,9 +79,11 @@ export function EditorToolbar({
   onToggleGraph,
   commandRequest,
   linkSuggestions = [],
+  searchSource = "",
 }: EditorToolbarProps) {
   const [, setToolbarVersion] = useState(0);
   const [linkEditor, setLinkEditor] = useState<LinkEditorState>({ open: false, href: "", range: null });
+  const [searchQuery, setSearchQuery] = useState("");
   const linkInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
@@ -99,6 +104,13 @@ export function EditorToolbar({
 
   const canUseVisualCommands = mode === "visual" && Boolean(visualEditor) && visualEditor?.isEditable;
   const saveLabel = saveStatusLabel(saveStatus, dirty);
+  const searchCount = searchQuery ? countMatches(searchSource, searchQuery) : 0;
+  const runSearch = (direction: "forward" | "backward" = "forward") => {
+    const query = searchQuery.trim();
+    const nativeFind = (window as typeof window & { find?: (text: string, caseSensitive?: boolean, backwards?: boolean, wrap?: boolean, wholeWord?: boolean, searchInFrames?: boolean, showDialog?: boolean) => boolean }).find;
+    if (!query || typeof nativeFind !== "function") return;
+    nativeFind(query, false, direction === "backward", true, false, false, false);
+  };
   const openLinkEditor = () => {
     if (!visualEditor) return;
     const previous = visualEditor.getAttributes("link").href as string | undefined;
@@ -147,6 +159,9 @@ export function EditorToolbar({
         break;
       case "editor.italic":
         chain.toggleItalic().run();
+        break;
+      case "editor.strike":
+        chain.toggleStrike().run();
         break;
       case "editor.code":
         chain.toggleCode().run();
@@ -233,6 +248,13 @@ export function EditorToolbar({
                 icon={<Italic size={16} />}
               />
               <ToolbarButton
+                label="Strikethrough"
+                disabled={!canUseVisualCommands}
+                active={Boolean(visualEditor?.isActive("strike"))}
+                onClick={() => visualEditor?.chain().focus().toggleStrike().run()}
+                icon={<Strikethrough size={16} />}
+              />
+              <ToolbarButton
                 label="Inline code"
                 disabled={!canUseVisualCommands}
                 active={Boolean(visualEditor?.isActive("code"))}
@@ -299,6 +321,31 @@ export function EditorToolbar({
           ) : null}
         </div>
         <div className="editor-toolbar-utilities">
+          <div
+            className="toolbar-search"
+            role="search"
+            onKeyDown={(event) => {
+              if (event.key !== "Enter") return;
+              event.preventDefault();
+              runSearch(event.shiftKey ? "backward" : "forward");
+            }}
+          >
+            <Search size={14} aria-hidden="true" />
+            <input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.currentTarget.value)}
+              placeholder="Search"
+              aria-label="Search current document"
+            />
+            <span>{searchQuery ? searchCount : ""}</span>
+            <button type="button" disabled={!searchQuery} onClick={() => runSearch("backward")} aria-label="Previous search result">
+              Prev
+            </button>
+            <button type="button" disabled={!searchQuery} onClick={() => runSearch("forward")} aria-label="Next search result">
+              Next
+            </button>
+          </div>
+          <ToolbarSeparator />
           <div className="segmented-control" aria-label="Editor mode">
             <button className={mode === "visual" ? "active" : ""} onClick={() => onModeChange("visual")} title="Visual mode" aria-label="Visual mode" type="button">
               <Eye size={16} />
@@ -379,6 +426,21 @@ export function EditorToolbar({
       <TableToolbar editor={visualEditor} visible={mode === "visual" && Boolean(visualEditor?.isActive("table"))} />
     </div>
   );
+}
+
+function countMatches(source: string, query: string): number {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return 0;
+  let count = 0;
+  let offset = 0;
+  const haystack = source.toLowerCase();
+  while (offset < haystack.length) {
+    const index = haystack.indexOf(needle, offset);
+    if (index === -1) break;
+    count += 1;
+    offset = index + needle.length;
+  }
+  return count;
 }
 
 function saveStatusLabel(status: SaveStatus, dirty: boolean): string {

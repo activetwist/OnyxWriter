@@ -1,9 +1,11 @@
 export type WorkspaceEntryKind = "folder" | "file";
+export type WorkspaceFileType = "markdown" | "image" | "other";
 
 export interface WorkspaceEntry {
   name: string;
   path: string;
   kind: WorkspaceEntryKind;
+  fileType?: WorkspaceFileType;
   reserved: boolean;
   children: WorkspaceEntry[];
 }

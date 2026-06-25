@@ -6,10 +6,12 @@ use std::{
 };
 
 #[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct WorkspaceEntry {
     name: String,
     path: String,
     kind: String,
+    file_type: Option<String>,
     reserved: bool,
     children: Vec<WorkspaceEntry>,
 }
@@ -146,6 +148,7 @@ fn build_entry(root: &Path, path: &Path) -> Result<Option<WorkspaceEntry>, Strin
             name,
             path: rel_string(root, path)?,
             kind: "folder".into(),
+            file_type: None,
             reserved: false,
             children,
         }))
@@ -155,12 +158,34 @@ fn build_entry(root: &Path, path: &Path) -> Result<Option<WorkspaceEntry>, Strin
             name,
             path: rel_string(root, path)?,
             kind: "file".into(),
+            file_type: Some("markdown".into()),
             reserved,
+            children: Vec::new(),
+        }))
+    } else if is_supported_image(path) {
+        Ok(Some(WorkspaceEntry {
+            name,
+            path: rel_string(root, path)?,
+            kind: "file".into(),
+            file_type: Some("image".into()),
+            reserved: false,
             children: Vec::new(),
         }))
     } else {
         Ok(None)
     }
+}
+
+fn is_supported_image(path: &Path) -> bool {
+    let extension = path
+        .extension()
+        .and_then(|value| value.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    matches!(
+        extension.as_str(),
+        "png" | "jpg" | "jpeg" | "gif" | "webp" | "bmp" | "svg"
+    )
 }
 
 #[tauri::command]
@@ -265,7 +290,7 @@ pub fn import_image_asset(root: String, source_path: String) -> Result<String, S
         .to_ascii_lowercase();
     if !matches!(
         extension.as_str(),
-        "png" | "jpg" | "jpeg" | "gif" | "webp" | "svg"
+        "png" | "jpg" | "jpeg" | "gif" | "webp" | "bmp" | "svg"
     ) {
         return Err("unsupported image type".into());
     }

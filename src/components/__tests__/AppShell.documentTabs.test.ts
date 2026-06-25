@@ -47,7 +47,7 @@ describe("AppShell document tabs", () => {
       host.querySelector('a[href="customers.md"]')?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
     });
 
-    await waitFor(() => activeTitle(host) === "Customers");
+    await waitFor(() => activeTabLabel(host) === "Customers");
     expect(tabLabels(host)).toContain("Orders");
     expect(tabLabels(host)).toContain("Customers");
 
@@ -55,13 +55,13 @@ describe("AppShell document tabs", () => {
       window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", ctrlKey: true, shiftKey: true, bubbles: true, cancelable: true }));
     });
 
-    await waitFor(() => activeTitle(host) === "Orders");
+    await waitFor(() => activeTabLabel(host) === "Orders");
 
     await act(async () => {
       window.dispatchEvent(new KeyboardEvent("keydown", { key: "Tab", ctrlKey: true, bubbles: true, cancelable: true }));
     });
 
-    await waitFor(() => activeTitle(host) === "Customers");
+    await waitFor(() => activeTabLabel(host) === "Customers");
 
     await act(async () => {
       root.unmount();
@@ -87,7 +87,7 @@ describe("AppShell document tabs", () => {
       host.querySelector('a[href="customers.md"]')?.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
     });
 
-    await waitFor(() => activeTitle(host) === "Customers");
+    await waitFor(() => activeTabLabel(host) === "Customers");
 
     const keyEvent = new KeyboardEvent("keydown", { key: "w", metaKey: true, bubbles: true, cancelable: true });
     await act(async () => {
@@ -95,7 +95,7 @@ describe("AppShell document tabs", () => {
     });
 
     expect(keyEvent.defaultPrevented).toBe(true);
-    await waitFor(() => activeTitle(host) === "Orders");
+    await waitFor(() => activeTabLabel(host) === "Orders");
     expect(tabLabels(host)).toEqual(["Orders"]);
 
     await act(async () => {
@@ -131,8 +131,8 @@ function buttonByLabel(host: HTMLElement, label: string): HTMLButtonElement {
   return button;
 }
 
-function activeTitle(host: HTMLElement): string {
-  return host.querySelector(".document-title-row h2")?.textContent ?? "";
+function activeTabLabel(host: HTMLElement): string {
+  return host.querySelector(".document-tab.active .document-tab-label")?.textContent ?? "";
 }
 
 function tabLabels(host: HTMLElement): string[] {

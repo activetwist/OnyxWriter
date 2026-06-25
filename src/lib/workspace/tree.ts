@@ -4,16 +4,18 @@ import { isIgnoredWorkspacePath } from "./projectDetection";
 export interface FlattenTreeOptions {
   includeSystemFiles?: boolean;
   collapsedPaths?: Set<string> | string[];
+  sortDirection?: "asc" | "desc";
 }
 
 export function flattenTree(entry: WorkspaceEntry | null, depth = 0, options: FlattenTreeOptions = {}): TreeNode[] {
   if (!entry) return [];
   if (entry.path && isIgnoredWorkspacePath(entry.path)) return [];
-  if (entry.kind === "file" && isReservedMarkdown(entry.path) && !options.includeSystemFiles) return [];
+  if (entry.kind === "file" && isMarkdownEntry(entry) && isReservedMarkdown(entry.path) && !options.includeSystemFiles) return [];
   const nodes: TreeNode[] = [{ ...entry, depth }];
   if (entry.kind === "folder" && entry.path && collapsedPathSet(options).has(entry.path)) return nodes;
-  const folders = entry.children.filter((child) => child.kind === "folder").sort(sortEntries);
-  const files = entry.children.filter((child) => child.kind === "file").sort(sortEntries);
+  const direction = options.sortDirection === "desc" ? -1 : 1;
+  const folders = entry.children.filter((child) => child.kind === "folder").sort((a, b) => sortEntries(a, b) * direction);
+  const files = entry.children.filter((child) => child.kind === "file").sort((a, b) => sortEntries(a, b) * direction);
   for (const child of [...folders, ...files]) {
     nodes.push(...flattenTree(child, depth + 1, options));
   }
@@ -26,14 +28,14 @@ export function flattenEditableTree(entry: WorkspaceEntry | null): TreeNode[] {
 
 export function markdownPaths(entry: WorkspaceEntry | null): string[] {
   return flattenTree(entry, 0, { includeSystemFiles: true })
-    .filter((node) => node.kind === "file")
+    .filter((node) => node.kind === "file" && isMarkdownEntry(node))
     .map((node) => node.path)
     .filter(Boolean);
 }
 
 export function linkableMarkdownPaths(entry: WorkspaceEntry | null, options: FlattenTreeOptions = {}): string[] {
   return flattenTree(entry, 0, { includeSystemFiles: Boolean(options.includeSystemFiles) })
-    .filter((node) => node.kind === "file")
+    .filter((node) => node.kind === "file" && isMarkdownEntry(node))
     .map((node) => node.path)
     .filter((path) => path.endsWith(".md"))
     .filter((path) => options.includeSystemFiles || !isReservedMarkdown(path));
@@ -46,6 +48,18 @@ export function isReservedMarkdown(path: string): boolean {
 
 export function isEditableMarkdown(path: string): boolean {
   return path.endsWith(".md") && !isReservedMarkdown(path);
+}
+
+export function isMarkdownEntry(entry: Pick<WorkspaceEntry, "path" | "fileType">): boolean {
+  return entry.fileType === "markdown" || (!entry.fileType && entry.path.endsWith(".md"));
+}
+
+export function isImageEntry(entry: Pick<WorkspaceEntry, "path" | "fileType">): boolean {
+  return entry.fileType === "image" || isImagePath(entry.path);
+}
+
+export function isImagePath(path: string): boolean {
+  return /\.(png|jpe?g|webp|gif|bmp|svg)$/i.test(path);
 }
 
 export function normalizeWorkspacePath(path: string): string {

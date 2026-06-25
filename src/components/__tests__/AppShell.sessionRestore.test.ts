@@ -98,7 +98,7 @@ describe("AppShell session restore", () => {
     await waitFor(() => tabLabels(host).includes("Customers"));
 
     expect(tabLabels(host)).toEqual(["Orders", "Customers"]);
-    expect(activeTitle(host)).toBe("Customers");
+    expect(activeTabLabel(host)).toBe("Customers");
     expect(host.textContent).toContain("Skipped 1 missing saved tab");
 
     await act(async () => {
@@ -107,8 +107,8 @@ describe("AppShell session restore", () => {
   });
 });
 
-function activeTitle(host: HTMLElement): string {
-  return host.querySelector(".document-title-row h2")?.textContent ?? "";
+function activeTabLabel(host: HTMLElement): string {
+  return host.querySelector(".document-tab.active .document-tab-label")?.textContent ?? "";
 }
 
 function tabLabels(host: HTMLElement): string[] {

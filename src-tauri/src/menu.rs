@@ -78,9 +78,24 @@ fn file_menu<R: Runtime>(manager: &impl Manager<R>) -> tauri::Result<tauri::menu
             accelerator: Some("CmdOrCtrl+N"),
         },
         CommandItem {
+            id: "document.openRecent",
+            label: "Open Recent Document",
+            accelerator: None,
+        },
+        CommandItem {
             id: "folder.new",
             label: "New Folder",
             accelerator: Some("CmdOrCtrl+Shift+N"),
+        },
+        CommandItem {
+            id: "document.share",
+            label: "Share",
+            accelerator: None,
+        },
+        CommandItem {
+            id: "document.export",
+            label: "Export...",
+            accelerator: None,
         },
         CommandItem {
             id: "tab.close",
@@ -100,7 +115,7 @@ fn file_menu<R: Runtime>(manager: &impl Manager<R>) -> tauri::Result<tauri::menu
     ];
     let mut menu = SubmenuBuilder::new(manager, "File");
     for (index, item) in items.iter().enumerate() {
-        if index == 4 || index == 5 {
+        if index == 2 || index == 5 || index == 7 {
             menu = menu.separator();
         }
         menu = menu.item(&command_item(manager, item)?);
@@ -184,6 +199,11 @@ fn format_menu<R: Runtime>(manager: &impl Manager<R>) -> tauri::Result<tauri::me
             accelerator: Some("CmdOrCtrl+I"),
         },
         CommandItem {
+            id: "editor.strike",
+            label: "Strikethrough",
+            accelerator: Some("CmdOrCtrl+Shift+X"),
+        },
+        CommandItem {
             id: "editor.code",
             label: "Inline Code",
             accelerator: None,
@@ -201,7 +221,7 @@ fn format_menu<R: Runtime>(manager: &impl Manager<R>) -> tauri::Result<tauri::me
     ];
     let mut menu = SubmenuBuilder::new(manager, "Format");
     for (index, item) in items.iter().enumerate() {
-        if index == 4 || index == 7 {
+        if index == 4 || index == 8 {
             menu = menu.separator();
         }
         menu = menu.item(&command_item(manager, item)?);

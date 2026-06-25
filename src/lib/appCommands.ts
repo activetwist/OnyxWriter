@@ -3,6 +3,9 @@ export type AppCommand =
   | "bundle.create"
   | "bundle.refresh"
   | "document.new"
+  | "document.openRecent"
+  | "document.share"
+  | "document.export"
   | "folder.new"
   | "item.rename"
   | "item.delete"
@@ -26,6 +29,7 @@ export type EditorCommand =
   | "editor.heading3"
   | "editor.bold"
   | "editor.italic"
+  | "editor.strike"
   | "editor.code"
   | "editor.bulletList"
   | "editor.orderedList"
@@ -87,6 +91,7 @@ export function commandFromKeyboardEvent(event: KeyboardEvent, mode: "visual" | 
   if (primary && !event.altKey) {
     if (key === "b" && !event.shiftKey) return "editor.bold";
     if (key === "i" && !event.shiftKey) return "editor.italic";
+    if (key === "x" && event.shiftKey) return "editor.strike";
     if (key === "k" && !event.shiftKey) return "editor.link";
     if (key === "k" && event.shiftKey) return "editor.unlink";
     if (key === "7" && event.shiftKey) return "editor.orderedList";
@@ -122,6 +127,9 @@ const APP_COMMANDS = new Set<AppCommand>([
   "bundle.create",
   "bundle.refresh",
   "document.new",
+  "document.openRecent",
+  "document.share",
+  "document.export",
   "folder.new",
   "item.rename",
   "item.delete",
@@ -142,6 +150,7 @@ const APP_COMMANDS = new Set<AppCommand>([
   "editor.heading3",
   "editor.bold",
   "editor.italic",
+  "editor.strike",
   "editor.code",
   "editor.bulletList",
   "editor.orderedList",

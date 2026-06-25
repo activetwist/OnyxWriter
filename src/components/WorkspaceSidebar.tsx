@@ -1,7 +1,20 @@
-import { ChevronDown, ChevronRight, FileText, Folder, FolderOpen, PanelLeftClose, PanelLeftOpen, Plus, Settings } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  ChevronsUpDown,
+  FileImage,
+  FileText,
+  Folder,
+  FolderOpen,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Plus,
+  Settings,
+} from "lucide-react";
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import logoUrl from "../assets/brand/onyxwriter-logo.png";
-import { flattenTree, isReservedMarkdown } from "../lib/workspace/tree";
+import { flattenTree, isImageEntry, isMarkdownEntry, isReservedMarkdown } from "../lib/workspace/tree";
+import type { RecentWorkspace } from "../lib/workspace/recentWorkspaces";
 import type { WorkspaceEntry } from "../lib/workspace/types";
 import { DocumentActions } from "./DocumentActions";
 
@@ -13,17 +26,22 @@ interface WorkspaceSidebarProps {
   canMutateDocuments: boolean;
   collapsed: boolean;
   collapsedFolders: Set<string>;
+  allFoldersCollapsed: boolean;
+  recentWorkspaces: RecentWorkspace[];
   onOpenWorkspace: () => void;
   onCreateWorkspace: () => void;
+  onOpenRecentWorkspace: (path: string) => void;
   onSelectPath: (path: string) => void;
   onSelectEntry: (path: string) => void;
   onToggleCollapsed: () => void;
   onToggleFolder: (path: string) => void;
+  onToggleFoldAll: () => void;
   onCreateFile: () => void;
   onCreateFolder: () => void;
   onRename: () => void;
   onDelete: () => void;
   onMovePath: (sourcePath: string, destinationFolderPath: string) => void;
+  onOpenSplitView: (path: string) => void;
   onOpenSettings: () => void;
   showSystemFiles: boolean;
 }
@@ -36,20 +54,28 @@ export function WorkspaceSidebar({
   canMutateDocuments,
   collapsed,
   collapsedFolders,
+  allFoldersCollapsed,
+  recentWorkspaces,
   onOpenWorkspace,
   onCreateWorkspace,
+  onOpenRecentWorkspace,
   onSelectPath,
   onSelectEntry,
   onToggleCollapsed,
   onToggleFolder,
+  onToggleFoldAll,
   onCreateFile,
   onCreateFolder,
   onRename,
   onDelete,
   onMovePath,
+  onOpenSplitView,
   onOpenSettings,
   showSystemFiles,
 }: WorkspaceSidebarProps) {
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
+  const [bundleMenuOpen, setBundleMenuOpen] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ path: string; x: number; y: number } | null>(null);
   const [dragState, setDragState] = useState<{
     sourcePath: string;
     startX: number;
@@ -58,7 +84,8 @@ export function WorkspaceSidebar({
     dropPath: string;
   } | null>(null);
   const suppressClickRef = useRef(false);
-  const nodes = flattenTree(tree, 0, { includeSystemFiles: showSystemFiles, collapsedPaths: collapsedFolders }).filter((node) => node.path !== "");
+  const nodes = flattenTree(tree, 0, { includeSystemFiles: showSystemFiles, collapsedPaths: collapsedFolders, sortDirection }).filter((node) => node.path !== "");
+  const contextEntry = contextMenu ? findEntry(tree, contextMenu.path) : null;
   const dragActive = Boolean(dragState?.active);
   const dropPath = dragState?.active ? dragState.dropPath : "";
   const activeDragSource = dragState?.sourcePath ?? "";
@@ -126,6 +153,20 @@ export function WorkspaceSidebar({
     };
   }, [dragState, onMovePath]);
 
+  useEffect(() => {
+    if (!contextMenu && !bundleMenuOpen) return;
+    const close = () => {
+      setContextMenu(null);
+      setBundleMenuOpen(false);
+    };
+    window.addEventListener("click", close);
+    window.addEventListener("keydown", close);
+    return () => {
+      window.removeEventListener("click", close);
+      window.removeEventListener("keydown", close);
+    };
+  }, [bundleMenuOpen, contextMenu]);
+
   if (collapsed) {
     return (
       <aside className="workspace-sidebar collapsed" aria-label="Bundle explorer">
@@ -160,7 +201,7 @@ export function WorkspaceSidebar({
             <img src={logoUrl} alt="" />
             <h1>Onyx Writer</h1>
           </div>
-          <p title={rootPath || undefined}>{rootPath ? bundleName : "No bundle open"}</p>
+          <p>{rootPath ? "Bundle open" : "No bundle open"}</p>
         </div>
         <div className="drawer-command-row" aria-label="Bundle actions">
           <button className="icon-button" onClick={onOpenWorkspace} type="button" aria-label="Open Bundle" title="Open Bundle">
@@ -181,6 +222,10 @@ export function WorkspaceSidebar({
         onCreateFile={onCreateFile}
         onCreateFolder={onCreateFolder}
         onRename={onRename}
+        sortDirection={sortDirection}
+        allFoldersCollapsed={allFoldersCollapsed}
+        onToggleSort={() => setSortDirection((current) => (current === "asc" ? "desc" : "asc"))}
+        onToggleFoldAll={onToggleFoldAll}
         onDelete={onDelete}
       />
       <nav
@@ -204,6 +249,12 @@ export function WorkspaceSidebar({
                 key={node.path || node.name}
                 data-tree-path={node.path}
                 data-drop-path={node.kind === "folder" ? node.path : undefined}
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  onSelectEntry(node.path);
+                  if (isMarkdownEntry(node) || isImageEntry(node)) onSelectPath(node.path);
+                  setContextMenu({ path: node.path, x: event.clientX, y: event.clientY });
+                }}
                 onPointerEnter={(event) => {
                   if (!dragState?.active || node.kind !== "folder") return;
                   event.stopPropagation();
@@ -234,19 +285,19 @@ export function WorkspaceSidebar({
                       return;
                     }
                     onSelectEntry(node.path);
-                    if (node.kind === "file") onSelectPath(node.path);
+                    if (node.kind === "file" && (isMarkdownEntry(node) || isImageEntry(node))) onSelectPath(node.path);
                   }}
                   onKeyDown={(event) => {
                     if (event.key !== "Enter" && event.key !== " ") return;
                     event.preventDefault();
                     onSelectEntry(node.path);
-                    if (node.kind === "file") onSelectPath(node.path);
+                    if (node.kind === "file" && (isMarkdownEntry(node) || isImageEntry(node))) onSelectPath(node.path);
                   }}
                   role="button"
                   tabIndex={0}
                   title={node.path}
                 >
-                  {node.kind === "folder" ? folderCollapsed ? <Folder size={16} /> : <FolderOpen size={16} /> : <FileText size={16} />}
+                  {node.kind === "folder" ? folderCollapsed ? <Folder size={16} /> : <FolderOpen size={16} /> : isImageEntry(node) ? <FileImage size={16} /> : <FileText size={16} />}
                   <span>{node.name}</span>
                 </div>
               </div>
@@ -255,13 +306,82 @@ export function WorkspaceSidebar({
         )}
       </nav>
       <div className="sidebar-footer">
+        <div className="bundle-switcher">
+          <button
+            className="bundle-switcher-button"
+            type="button"
+            onClick={(event) => {
+              event.stopPropagation();
+              setBundleMenuOpen((current) => !current);
+            }}
+            aria-label="Switch bundle"
+            aria-expanded={bundleMenuOpen}
+          >
+            <ChevronsUpDown size={16} />
+            <span>{rootPath ? bundleName : "No bundle open"}</span>
+          </button>
+          {bundleMenuOpen ? (
+            <div className="bundle-switcher-menu" role="menu">
+              {recentWorkspaces.length ? (
+                recentWorkspaces.map((workspace) => (
+                  <button
+                    key={workspace.path}
+                    type="button"
+                    role="menuitem"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setBundleMenuOpen(false);
+                      onOpenRecentWorkspace(workspace.path);
+                    }}
+                  >
+                    <span>{workspace.name}</span>
+                    <small>{workspace.path}</small>
+                  </button>
+                ))
+              ) : (
+                <span className="bundle-switcher-empty">No recent bundles</span>
+              )}
+            </div>
+          ) : null}
+        </div>
         <button className="settings-button" type="button" onClick={onOpenSettings} aria-label="Open settings">
           <Settings size={17} />
           <span>Settings</span>
         </button>
       </div>
+      {contextMenu && contextEntry ? (
+        <div className="tree-context-menu" style={{ left: contextMenu.x, top: contextMenu.y }} role="menu" onClick={(event) => event.stopPropagation()}>
+          {contextEntry.kind === "file" && isMarkdownEntry(contextEntry) && !isReservedMarkdown(contextEntry.path) ? (
+            <button type="button" role="menuitem" onClick={() => { setContextMenu(null); onOpenSplitView(contextEntry.path); }}>
+              Open in Split View
+            </button>
+          ) : null}
+          <button type="button" role="menuitem" onClick={() => { setContextMenu(null); onCreateFile(); }}>
+            New Document
+          </button>
+          <button type="button" role="menuitem" onClick={() => { setContextMenu(null); onCreateFolder(); }}>
+            New Folder
+          </button>
+          <button type="button" role="menuitem" disabled={!canMutateDocuments || !contextEntry.path || (contextEntry.kind === "file" && isReservedMarkdown(contextEntry.path))} onClick={() => { setContextMenu(null); onRename(); }}>
+            Rename
+          </button>
+          <button type="button" role="menuitem" disabled={!canMutateDocuments || !contextEntry.path || (contextEntry.kind === "file" && isReservedMarkdown(contextEntry.path))} onClick={() => { setContextMenu(null); onDelete(); }}>
+            Delete
+          </button>
+        </div>
+      ) : null}
     </aside>
   );
+}
+
+function findEntry(entry: WorkspaceEntry | null, path: string): WorkspaceEntry | null {
+  if (!entry) return null;
+  if (entry.path === path) return entry;
+  for (const child of entry.children) {
+    const found = findEntry(child, path);
+    if (found) return found;
+  }
+  return null;
 }
 
 function isInvalidDropTarget(sourcePath: string, targetPath: string): boolean {

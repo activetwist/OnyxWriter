@@ -50,6 +50,7 @@ function inlineMarkdownToHtml(text: string): string {
   return escapeHtml(text)
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
     .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/~~([^~]+)~~/g, "<s>$1</s>")
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/\*([^*]+)\*/g, "<em>$1</em>");
 }
@@ -82,6 +83,7 @@ function inlineHtmlToMarkdown(node: HTMLElement): string {
     if (child.nodeType === Node.TEXT_NODE) out += child.textContent ?? "";
     else if (child instanceof HTMLAnchorElement) out += `[${child.textContent ?? ""}](${child.getAttribute("href") ?? ""})`;
     else if (child instanceof HTMLElement && child.tagName === "CODE") out += `\`${child.textContent ?? ""}\``;
+    else if (child instanceof HTMLElement && (child.tagName === "S" || child.tagName === "STRIKE" || child.tagName === "DEL")) out += `~~${inlineHtmlToMarkdown(child)}~~`;
     else if (child instanceof HTMLElement && child.tagName === "STRONG") out += `**${inlineHtmlToMarkdown(child)}**`;
     else if (child instanceof HTMLElement && child.tagName === "EM") out += `*${inlineHtmlToMarkdown(child)}*`;
     else if (child instanceof HTMLImageElement) out += imageHtmlToMarkdown(child);

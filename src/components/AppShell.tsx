@@ -1,5 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
+import { convertFileSrc } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { X } from "lucide-react";
 import { AppErrorBoundary } from "./AppErrorBoundary";
@@ -32,7 +33,7 @@ import {
 } from "../lib/workspace/api";
 import { defaultConceptContents, ensureMarkdownPath } from "../lib/workspace/operations";
 import { SEED_DRAWER_FILES, SEED_DRAWER_TITLE } from "../lib/workspace/seedDrawer";
-import { ancestorFolderPaths, linkableMarkdownPaths, markdownPaths, normalizeWorkspacePath } from "../lib/workspace/tree";
+import { ancestorFolderPaths, isImageEntry, linkableMarkdownPaths, markdownPaths, normalizeWorkspacePath } from "../lib/workspace/tree";
 import type { WorkspaceEntry } from "../lib/workspace/types";
 import { defaultIndexContent, generateDirectoryIndexBlock, indexableDirectoryPaths, indexPathForDirectory, updateManagedIndexContent } from "../lib/workspace/indexManager";
 import { repairMovedLinksFrom } from "../lib/workspace/linkRepair";
@@ -222,6 +223,8 @@ export function AppShell() {
   const [projectBundleBusy, setProjectBundleBusy] = useState(false);
   const [projectBundleError, setProjectBundleError] = useState("");
   const [editorCommandRequest, setEditorCommandRequest] = useState<EditorCommandRequest | null>(null);
+  const [selectedImagePath, setSelectedImagePath] = useState("");
+  const [splitDocument, setSplitDocument] = useState<OpenDocumentState | null>(null);
   const restoreAttemptedRef = useRef(false);
   const editorCommandIdRef = useRef(0);
   const knownPaths = useMemo(() => new Set(markdownPaths(state.tree)), [state.tree]);
@@ -237,6 +240,8 @@ export function AppShell() {
   const currentDesignSystem = designState ? activeDesignSystem(designState) : null;
   const currentAppearanceMode = designState?.appearanceMode ?? currentDesignSystem?.definition.settings.defaultMode ?? "light";
   const openDocumentPathsKey = useMemo(() => state.openDocuments.map((document) => document.path).join("\u001f"), [state.openDocuments]);
+  const folderPaths = useMemo(() => collectFolderPaths(state.tree), [state.tree]);
+  const allFoldersCollapsed = folderPaths.length > 0 && folderPaths.every((path) => collapsedFolders.has(path));
   const drawerGraph = useMemo(
     () => buildDrawerGraph(state.tree, graphDocuments, { includeSystemFiles: showSystemFiles }),
     [graphDocuments, showSystemFiles, state.tree],
@@ -320,6 +325,7 @@ export function AppShell() {
 
   const setActiveDocument = useCallback((document: OpenDocumentState, status = "") => {
     expandAncestors(document.path);
+    setSelectedImagePath("");
     setState((current) => ({
       ...current,
       selectedPath: document.path,
@@ -345,6 +351,18 @@ export function AppShell() {
     },
     [knownPaths, setActiveDocument, state.openDocuments, state.rootPath],
   );
+
+  const selectImagePath = useCallback((path: string) => {
+    expandAncestors(path);
+    setSelectedImagePath(path);
+    setGraphOpen(false);
+    setState((current) => ({
+      ...current,
+      selectedPath: path,
+      selectedTreePath: path,
+      status: `Previewing ${path}.`,
+    }));
+  }, [expandAncestors]);
 
   const selectOpenTab = useCallback((path: string) => {
     const document = state.openDocuments.find((item) => item.path === path);
@@ -634,9 +652,14 @@ export function AppShell() {
 
   const selectPath = useCallback(
     async (path: string) => {
+      const entry = findWorkspaceEntry(state.tree, path);
+      if (entry && isImageEntry(entry)) {
+        selectImagePath(path);
+        return;
+      }
       await openDocumentPath(path);
     },
-    [openDocumentPath],
+    [openDocumentPath, selectImagePath, state.tree],
   );
 
   const selectTreeEntry = useCallback((path: string) => {
@@ -666,6 +689,21 @@ export function AppShell() {
       }
     },
     [knownPaths, state.openDocument],
+  );
+
+  const changeSplitRaw = useCallback(
+    (raw: string) => {
+      if (!splitDocument) return;
+      const nextDocument = {
+        ...splitDocument,
+        raw,
+        dirty: true,
+        validation: validateWithConfidence(splitDocument.path, raw, knownPaths),
+      };
+      setSplitDocument(nextDocument);
+      setGraphDocuments((current) => ({ ...current, [nextDocument.path]: raw }));
+    },
+    [knownPaths, splitDocument],
   );
 
   const saveSnapshot = useCallback(
@@ -722,6 +760,18 @@ export function AppShell() {
     }, AUTOSAVE_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
   }, [saveSnapshot, state.openDocuments, state.rootPath]);
+
+  useEffect(() => {
+    if (!splitDocument || !canAutosaveDocument(state.rootPath, splitDocument)) return;
+    const rootPath = state.rootPath;
+    const document = splitDocument;
+    const timer = window.setTimeout(() => {
+      void saveSnapshot(rootPath, document.path, document.raw, false).then(() => {
+        setSplitDocument((current) => (current?.path === document.path && current.raw === document.raw ? { ...current, dirty: false } : current));
+      });
+    }, AUTOSAVE_DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [saveSnapshot, splitDocument, state.rootPath]);
 
   useEffect(() => {
     if (!state.rootPath || state.rootPath === SAMPLE_DRAWER_ROOT) return;
@@ -799,9 +849,19 @@ export function AppShell() {
   }, [loadGraphDocuments, refreshTree, state.openDocuments, state.rootPath]);
 
   const openGraph = useCallback(async () => {
+    setSelectedImagePath("");
     if (state.rootPath && state.tree) await loadGraphDocuments(state.rootPath, state.tree);
     setGraphOpen((current) => !current);
   }, [loadGraphDocuments, state.rootPath, state.tree]);
+
+  const openSplitView = useCallback(async (path: string) => {
+    if (!state.rootPath || state.rootPath === SAMPLE_DRAWER_ROOT) return;
+    const raw = await readWorkspaceFile(state.rootPath, path);
+    setSplitDocument({ path, raw, dirty: false, validation: validateWithConfidence(path, raw, knownPaths) });
+    setSelectedImagePath("");
+    setGraphOpen(false);
+    setState((current) => ({ ...current, selectedTreePath: path, status: `Opened ${path} in split view.` }));
+  }, [knownPaths, state.rootPath]);
 
   const openGraphDocument = useCallback(
     async (path: string) => {
@@ -1164,6 +1224,16 @@ export function AppShell() {
         case "document.new":
           createFile();
           break;
+        case "document.openRecent":
+          if (state.openDocuments.length) setActiveDocument(state.openDocuments[state.openDocuments.length - 1]);
+          else setState((current) => ({ ...current, status: "No recent document in this session." }));
+          break;
+        case "document.share":
+          setState((current) => ({ ...current, status: "Share is not implemented in this alpha." }));
+          break;
+        case "document.export":
+          setState((current) => ({ ...current, status: "Export is not implemented in this alpha." }));
+          break;
         case "folder.new":
           createFolder();
           break;
@@ -1221,6 +1291,7 @@ export function AppShell() {
       refreshBundle,
       renameSelected,
       save,
+      setActiveDocument,
       setMode,
       state.mode,
       state.openDocument,
@@ -1277,18 +1348,28 @@ export function AppShell() {
         canMutateDocuments={Boolean(state.rootPath && state.rootPath !== SAMPLE_DRAWER_ROOT)}
         collapsed={explorerCollapsed}
         collapsedFolders={collapsedFolders}
+        allFoldersCollapsed={allFoldersCollapsed}
+        recentWorkspaces={recentDrawers}
         showSystemFiles={showSystemFiles}
         onOpenWorkspace={openWorkspace}
         onCreateWorkspace={createWorkspace}
+        onOpenRecentWorkspace={openWorkspacePath}
         onSelectPath={selectPath}
         onSelectEntry={selectTreeEntry}
         onToggleCollapsed={toggleExplorerCollapsed}
         onToggleFolder={toggleFolderCollapsed}
+        onToggleFoldAll={() => {
+          setCollapsedFolders((current) => {
+            if (allFoldersCollapsed) return new Set();
+            return new Set(folderPaths);
+          });
+        }}
         onCreateFile={createFile}
         onCreateFolder={createFolder}
         onRename={renameSelected}
         onDelete={deleteSelected}
         onMovePath={movePath}
+        onOpenSplitView={openSplitView}
         onOpenSettings={() => setSettingsOpen(true)}
       />
       <section className={`main-column ${state.rootPath ? "" : "no-tabs"}`}>
@@ -1311,6 +1392,7 @@ export function AppShell() {
           onToggleGraph={openGraph}
           commandRequest={editorCommandRequest}
           linkSuggestions={linkSuggestions}
+          searchSource={state.openDocument?.raw ?? ""}
         />
         {state.rootPath && graphOpen ? (
           <div className="workbench graph-workbench">
@@ -1320,17 +1402,48 @@ export function AppShell() {
               </Suspense>
             </AppErrorBoundary>
           </div>
+        ) : state.rootPath && selectedImagePath ? (
+          <div className={`workbench image-workbench ${validationCollapsed ? "validation-collapsed" : ""}`}>
+            <ImagePreviewPane rootPath={state.rootPath} path={selectedImagePath} />
+            <ValidationPanel validation={null} collapsed={validationCollapsed} onToggleCollapsed={toggleValidationCollapsed} />
+          </div>
         ) : state.rootPath ? (
           <div className={`workbench ${validationCollapsed ? "validation-collapsed" : ""}`}>
             <AppErrorBoundary label="Editor" resetKey={`${state.rootPath}:${state.selectedPath}:${state.mode}`}>
               <Suspense fallback={<div className="surface-loading">Loading editor.</div>}>
-                <EditorPane
-                  document={state.openDocument}
-                  mode={state.mode}
-                  onChange={changeRaw}
-                  onOpenLink={openDocumentLink}
-                  onVisualEditorChange={setVisualEditor}
-                />
+                {splitDocument ? (
+                  <div className="split-editor-grid">
+                    <EditorPane
+                      document={state.openDocument}
+                      mode={state.mode}
+                      onChange={changeRaw}
+                      onOpenLink={openDocumentLink}
+                      onVisualEditorChange={setVisualEditor}
+                      linkSuggestions={linkSuggestions}
+                    />
+                    <div className="split-pane">
+                      <button className="split-close-button" type="button" onClick={() => setSplitDocument(null)} aria-label="Close split view">
+                        <X size={15} />
+                      </button>
+                      <EditorPane
+                        document={splitDocument}
+                        mode={state.mode}
+                        onChange={changeSplitRaw}
+                        onOpenLink={openDocumentLink}
+                        linkSuggestions={linkSuggestions}
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <EditorPane
+                    document={state.openDocument}
+                    mode={state.mode}
+                    onChange={changeRaw}
+                    onOpenLink={openDocumentLink}
+                    onVisualEditorChange={setVisualEditor}
+                    linkSuggestions={linkSuggestions}
+                  />
+                )}
               </Suspense>
             </AppErrorBoundary>
             <ValidationPanel validation={state.openDocument?.validation ?? null} collapsed={validationCollapsed} onToggleCollapsed={toggleValidationCollapsed} />
@@ -1453,4 +1566,31 @@ export function AppShell() {
       />
     </div>
   );
+}
+
+function ImagePreviewPane({ rootPath, path }: { rootPath: string; path: string }) {
+  const src = isTauriRuntime() && rootPath !== SAMPLE_DRAWER_ROOT ? convertFileSrc(hostPathFor(rootPath, path)) : path;
+  return (
+    <main className="image-preview-pane">
+      <div className="image-preview-meta">
+        <span className="eyebrow">{path}</span>
+      </div>
+      <div className="image-preview-stage">
+        <img src={src} alt={path.split("/").pop() ?? path} />
+      </div>
+    </main>
+  );
+}
+
+function hostPathFor(rootPath: string, relativePath: string): string {
+  const separator = rootPath.includes("\\") ? "\\" : "/";
+  const root = rootPath.replace(/[\\/]+$/, "");
+  const relative = relativePath.replace(/\//g, separator);
+  return `${root}${separator}${relative}`;
+}
+
+function collectFolderPaths(entry: WorkspaceEntry | null): string[] {
+  if (!entry) return [];
+  const own = entry.path && entry.kind === "folder" ? [entry.path] : [];
+  return [...own, ...entry.children.flatMap(collectFolderPaths)];
 }
