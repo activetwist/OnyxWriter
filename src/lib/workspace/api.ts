@@ -7,6 +7,11 @@ export interface SelectedImageAsset {
   relativePath: string;
 }
 
+export interface WorkspaceAsset {
+  mimeType: string;
+  data: number[];
+}
+
 export async function selectWorkspaceDirectory(title = "Open Onyx Workspace"): Promise<string | null> {
   if (!isTauriRuntime()) return null;
   const selected = await open({ directory: true, multiple: false, title });
@@ -44,6 +49,10 @@ export async function inspectWorkspaceFolder(root: string): Promise<WorkspaceFol
 
 export async function readWorkspaceFile(root: string, relativePath: string): Promise<string> {
   return invoke<string>("read_text_file", { root, relativePath });
+}
+
+export async function readWorkspaceAsset(root: string, relativePath: string): Promise<WorkspaceAsset> {
+  return invoke<WorkspaceAsset>("read_workspace_asset", { root, relativePath });
 }
 
 export async function writeWorkspaceFile(root: string, relativePath: string, contents: string): Promise<void> {

@@ -1,6 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Editor } from "@tiptap/react";
-import { convertFileSrc } from "@tauri-apps/api/core";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { X } from "lucide-react";
 import { AboutDialog } from "./AboutDialog";
@@ -26,6 +25,7 @@ import {
   isTauriRuntime,
   listWorkspace,
   moveWorkspacePath,
+  readWorkspaceAsset,
   readWorkspaceFile,
   renameWorkspacePath,
   revealWorkspacePath,
@@ -1659,24 +1659,67 @@ export function AppShell() {
 }
 
 function ImagePreviewPane({ rootPath, path }: { rootPath: string; path: string }) {
-  const src = isTauriRuntime() && rootPath !== SAMPLE_DRAWER_ROOT ? convertFileSrc(hostPathFor(rootPath, path)) : path;
+  const [preview, setPreview] = useState<{ status: "loading" | "ready" | "error"; src?: string; error?: string }>({ status: "loading" });
+
+  useEffect(() => {
+    let canceled = false;
+    setPreview({ status: "loading" });
+
+    if (rootPath === SAMPLE_DRAWER_ROOT || !isTauriRuntime()) {
+      setPreview({ status: "ready", src: path });
+      return () => {
+        canceled = true;
+      };
+    }
+
+    void readWorkspaceAsset(rootPath, path)
+      .then((asset) => {
+        if (canceled) return;
+        setPreview({ status: "ready", src: workspaceAssetToDataUrl(asset.mimeType, asset.data) });
+      })
+      .catch((error: unknown) => {
+        if (canceled) return;
+        setPreview({ status: "error", error: error instanceof Error ? error.message : String(error) });
+      });
+
+    return () => {
+      canceled = true;
+    };
+  }, [path, rootPath]);
+
   return (
     <main className="image-preview-pane">
       <div className="image-preview-meta">
         <span className="eyebrow">{path}</span>
       </div>
       <div className="image-preview-stage">
-        <img src={src} alt={path.split("/").pop() ?? path} />
+        {preview.status === "loading" ? <div className="image-preview-message">Loading image.</div> : null}
+        {preview.status === "error" ? (
+          <div className="image-preview-message image-preview-error">
+            <strong>Image could not load</strong>
+            <span>{preview.error ?? "The selected image could not be rendered."}</span>
+          </div>
+        ) : null}
+        {preview.status === "ready" && preview.src ? (
+          <img
+            src={preview.src}
+            alt={path.split("/").pop() ?? path}
+            onError={() => setPreview({ status: "error", error: "The selected image could not be rendered." })}
+          />
+        ) : null}
       </div>
     </main>
   );
 }
 
-function hostPathFor(rootPath: string, relativePath: string): string {
-  const separator = rootPath.includes("\\") ? "\\" : "/";
-  const root = rootPath.replace(/[\\/]+$/, "");
-  const relative = relativePath.replace(/\//g, separator);
-  return `${root}${separator}${relative}`;
+function workspaceAssetToDataUrl(mimeType: string, data: number[]): string {
+  let binary = "";
+  const chunkSize = 8192;
+  for (let index = 0; index < data.length; index += chunkSize) {
+    const chunk = data.slice(index, index + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  return `data:${mimeType};base64,${window.btoa(binary)}`;
 }
 
 function collectFolderPaths(entry: WorkspaceEntry | null): string[] {

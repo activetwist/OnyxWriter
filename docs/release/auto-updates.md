@@ -16,10 +16,12 @@ Manual install assets:
 
 - macOS: `.dmg`
 - Linux: `.deb` and `.rpm`
+- Windows: `.msi` and NSIS `.exe`
 
 Updater payload assets:
 
 - macOS: signed `.app.tar.gz` plus signature metadata
+- Windows: signed updater-aware MSI/NSIS assets plus signature metadata
 - Linux: AppImage-oriented updater assets when AppImage packaging is enabled and reliable
 
 ## Important Version Constraint
@@ -77,7 +79,9 @@ The private key and password must never be committed, pasted into release notes,
 The release workflow builds:
 
 - macOS Apple Silicon via `--target aarch64-apple-darwin`;
-- Linux DEB/RPM via `--bundles deb,rpm`.
+- Linux DEB/RPM via `--bundles deb,rpm`;
+- Windows x64 MSI/NSIS packages;
+- Windows ARM64 MSI/NSIS packages.
 
 The workflow uses `tauri-apps/tauri-action` with `includeUpdaterJson: true` so the release can publish updater metadata and signatures alongside installer assets.
 
@@ -92,15 +96,16 @@ Linux in-app updater support is deferred until AppImage packaging is reliable. D
 3. Tag the updater-enabled release:
 
 ```sh
-git tag v0.1.2-alpha
-git push origin v0.1.2-alpha
+git tag v0.1.9-alpha
+git push origin v0.1.9-alpha
 ```
 
 4. Wait for GitHub Actions to produce a draft release.
 5. Inspect the draft release assets.
 6. Confirm macOS includes both the manual DMG and updater archive/signature metadata.
 7. Confirm Linux includes DEB/RPM manual assets.
-8. Publish the release when assets and notes are correct.
+8. Confirm Windows includes x64 and ARM64 MSI/NSIS assets plus generated signatures.
+9. Publish the release when assets and notes are correct.
 
 ## Test Update Flow
 

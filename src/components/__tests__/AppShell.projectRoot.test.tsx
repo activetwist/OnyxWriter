@@ -22,6 +22,7 @@ const workspaceApi = vi.hoisted(() => ({
   isTauriRuntime: vi.fn(() => true),
   listWorkspace: vi.fn(() => Promise.resolve(tree)),
   moveWorkspacePath: vi.fn(() => Promise.resolve()),
+  readWorkspaceAsset: vi.fn(() => Promise.reject(new Error("Missing asset"))),
   readWorkspaceFile: vi.fn(() => Promise.resolve("---\ntype: Concept\n---\n\n# Test\n")),
   renameWorkspacePath: vi.fn(() => Promise.resolve("")),
   revealWorkspacePath: vi.fn(() => Promise.resolve()),

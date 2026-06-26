@@ -31,6 +31,7 @@ const workspaceApi = vi.hoisted(() => ({
   isTauriRuntime: vi.fn(() => true),
   listWorkspace: vi.fn(() => Promise.resolve(tree)),
   moveWorkspacePath: vi.fn(() => Promise.resolve()),
+  readWorkspaceAsset: vi.fn(() => Promise.reject(new Error("Missing asset"))),
   readWorkspaceFile: vi.fn((_: string, relativePath: string) => {
     const contents = files.get(relativePath);
     return contents === undefined ? Promise.reject(new Error(`Missing ${relativePath}`)) : Promise.resolve(contents);

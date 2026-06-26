@@ -845,6 +845,33 @@ button {
   object-fit: contain;
 }
 
+.image-preview-message {
+  display: grid;
+  gap: 6px;
+  color: var(--ow-text-muted);
+  font-size: var(--ow-type-sm);
+  text-align: center;
+}
+
+.image-preview-message strong {
+  color: var(--ow-text);
+  font-family: var(--ow-font-headlines);
+  font-size: var(--ow-type-md);
+}
+
+.image-preview-error {
+  max-width: min(520px, 100%);
+  border: 1px solid var(--ow-danger);
+  border-radius: var(--ow-radius-md);
+  background: var(--ow-danger-surface);
+  color: var(--ow-danger-text);
+  padding: 16px;
+}
+
+.image-preview-error strong {
+  color: var(--ow-danger-text);
+}
+
 .split-editor-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);

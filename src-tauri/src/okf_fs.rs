@@ -6,7 +6,7 @@ use std::{
     process::Command,
 };
 
-#[derive(Serialize)]
+#[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct WorkspaceEntry {
     name: String,
@@ -25,6 +25,13 @@ pub struct WorkspaceFolderInspection {
     project_markers: Vec<String>,
     okf_markers: Vec<String>,
     has_markdown: bool,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkspaceAsset {
+    mime_type: String,
+    data: Vec<u8>,
 }
 
 const IGNORED_WORKSPACE_NAMES: &[&str] = &[
@@ -336,6 +343,46 @@ fn sanitize_asset_stem(value: &str) -> String {
     }
 }
 
+fn image_mime_for_extension(extension: &str) -> Option<&'static str> {
+    match extension {
+        "png" => Some("image/png"),
+        "jpg" | "jpeg" => Some("image/jpeg"),
+        "gif" => Some("image/gif"),
+        "webp" => Some("image/webp"),
+        "bmp" => Some("image/bmp"),
+        "svg" => Some("image/svg+xml"),
+        _ => None,
+    }
+}
+
+#[tauri::command]
+pub fn read_workspace_asset(root: String, relative_path: String) -> Result<WorkspaceAsset, String> {
+    let root_path = fs::canonicalize(&root).map_err(|e| format!("bundle not found: {e}"))?;
+    if !root_path.is_dir() {
+        return Err("bundle root must be a directory".into());
+    }
+    let path = resolve_under_root(&root, &relative_path)?;
+    let canonical_path = fs::canonicalize(&path).map_err(|e| format!("asset not found: {e}"))?;
+    if !canonical_path.starts_with(&root_path) {
+        return Err("asset escapes bundle".into());
+    }
+    if !canonical_path.is_file() {
+        return Err("asset must be a file".into());
+    }
+    let extension = canonical_path
+        .extension()
+        .and_then(|value| value.to_str())
+        .unwrap_or("")
+        .to_ascii_lowercase();
+    let mime_type =
+        image_mime_for_extension(&extension).ok_or_else(|| "unsupported image type".to_string())?;
+    let data = fs::read(&canonical_path).map_err(|e| format!("asset read failed: {e}"))?;
+    Ok(WorkspaceAsset {
+        mime_type: mime_type.into(),
+        data,
+    })
+}
+
 #[tauri::command]
 pub fn read_text_file(root: String, relative_path: String) -> Result<String, String> {
     let path = resolve_under_root(&root, &relative_path)?;
@@ -392,7 +439,8 @@ pub fn write_export_file(destination_path: String, contents: String) -> Result<(
     };
     let tmp = path.with_extension(tmp_extension);
     {
-        let mut file = fs::File::create(&tmp).map_err(|e| format!("export temp write failed: {e}"))?;
+        let mut file =
+            fs::File::create(&tmp).map_err(|e| format!("export temp write failed: {e}"))?;
         file.write_all(contents.as_bytes())
             .map_err(|e| format!("export write failed: {e}"))?;
         file.sync_all()
@@ -496,5 +544,54 @@ pub fn delete_path(root: String, relative_path: String) -> Result<(), String> {
         fs::remove_dir_all(path).map_err(|e| format!("delete folder failed: {e}"))
     } else {
         fs::remove_file(path).map_err(|e| format!("delete file failed: {e}"))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn read_workspace_asset_returns_svg_mime_and_data() {
+        let root = temp_workspace("svg_asset");
+        let asset_dir = root.join("assets").join("images");
+        fs::create_dir_all(&asset_dir).expect("asset dir");
+        fs::write(
+            asset_dir.join("diagram.svg"),
+            "<svg xmlns=\"http://www.w3.org/2000/svg\"/>",
+        )
+        .expect("svg file");
+
+        let asset = read_workspace_asset(
+            root.to_string_lossy().to_string(),
+            "assets/images/diagram.svg".into(),
+        )
+        .expect("asset");
+
+        assert_eq!(asset.mime_type, "image/svg+xml");
+        assert!(!asset.data.is_empty());
+        fs::remove_dir_all(root).ok();
+    }
+
+    #[test]
+    fn read_workspace_asset_rejects_traversal() {
+        let root = temp_workspace("svg_asset_traversal");
+        fs::create_dir_all(&root).expect("workspace dir");
+
+        let error =
+            read_workspace_asset(root.to_string_lossy().to_string(), "../secret.svg".into())
+                .expect_err("traversal rejected");
+
+        assert!(error.contains("path traversal"));
+        fs::remove_dir_all(root).ok();
+    }
+
+    fn temp_workspace(label: &str) -> PathBuf {
+        let stamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .expect("time")
+            .as_nanos();
+        std::env::temp_dir().join(format!("onyxwriter_{label}_{stamp}"))
     }
 }

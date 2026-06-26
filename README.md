@@ -6,7 +6,7 @@ The app also includes a JSONM design-system runtime. JSONM definitions are valid
 
 ## Status
 
-Onyx Writer `0.1.2-alpha` is the current public alpha release. It is useful for testing local OKF bundle editing now, but it should still be treated as early software. Keep backups of important bundles and expect the OKF support surface to evolve as the format and editor mature.
+Onyx Writer `0.1.9-alpha` is the current public alpha release. It is useful for testing local OKF bundle editing now, but it should still be treated as early software. Keep backups of important bundles and expect the OKF support surface to evolve as the format and editor mature.
 
 ## Features
 
@@ -20,16 +20,20 @@ Onyx Writer `0.1.2-alpha` is the current public alpha release. It is useful for 
 
 ## Downloads
 
-The `v0.1.2-alpha` GitHub release includes:
+The `v0.1.9-alpha` GitHub release includes:
 
 - macOS Apple Silicon DMG
+- macOS updater `.app.tar.gz` archive and signature metadata
 - Linux DEB package
 - Linux RPM package
-- SHA-256 checksums
+- Windows x64 MSI installer and NSIS setup executable
+- Windows ARM64 MSI installer and NSIS setup executable
+- `latest.json` updater metadata
+- Generated signatures and SHA-256 asset digests where produced by the release workflow
 
-The macOS app is not signed or notarized yet, so macOS may show a warning on first launch. Windows and AppImage builds are not part of this alpha.
+The macOS app is not signed or notarized yet, so macOS may show a warning on first launch. Linux AppImage builds are not part of this alpha.
 
-`v0.1.1-alpha` was the first updater-enabled release. `v0.1.2-alpha` is intended to be discoverable from that build through the signed macOS updater path. Linux DEB/RPM packages remain manual update assets. See [docs/release/auto-updates.md](docs/release/auto-updates.md).
+`v0.1.1-alpha` was the first updater-enabled release. `v0.1.9-alpha` is intended to be discoverable from prior updater-enabled builds through the signed macOS and Windows updater paths. Linux DEB/RPM packages remain manual update assets. See [docs/release/auto-updates.md](docs/release/auto-updates.md).
 
 ## Setup
 
@@ -107,8 +111,8 @@ This product repository intentionally excludes local planning/runtime material s
 - Complex Markdown should be reviewed or edited in Raw mode when the validation/confidence rail says so.
 - macOS builds are unsigned and not notarized.
 - Linux AppImage packaging is not available yet.
-- `v0.1.1-alpha` should be installed manually; `v0.1.2-alpha` and later signed macOS releases can use the in-app updater path.
-- Windows builds have not been verified.
+- `v0.1.1-alpha` should be installed manually; `v0.1.2-alpha` and later updater-enabled macOS/Windows releases can use the in-app updater path.
+- Windows x64 and Windows ARM64 builds are published from GitHub Actions, but should still be treated as alpha packages.
 - There is no cloud sync, account system, collaboration, or hosted storage.
 
 ## Contributing and Support

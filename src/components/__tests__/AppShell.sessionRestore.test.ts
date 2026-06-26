@@ -31,6 +31,7 @@ vi.mock("../../lib/workspace/api", () => ({
   isTauriRuntime: vi.fn(() => true),
   listWorkspace: vi.fn(() => Promise.resolve(tree)),
   moveWorkspacePath: vi.fn(),
+  readWorkspaceAsset: vi.fn(() => Promise.reject(new Error("Missing asset"))),
   readWorkspaceFile: vi.fn((_: string, relativePath: string) => {
     const contents = files[relativePath];
     if (contents === undefined) return Promise.reject(new Error(`Missing ${relativePath}`));

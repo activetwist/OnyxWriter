@@ -25,7 +25,7 @@ describe("UpdateSettings", () => {
   it("shows the installed version before checking for updates", async () => {
     const host = await renderUpdateSettings();
 
-    expect(host.textContent).toContain("Installed version: 0.1.8");
+    expect(host.textContent).toContain("Installed version: 0.1.9");
   });
 
   it("shows a no-update status after checking", async () => {
