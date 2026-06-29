@@ -3,12 +3,14 @@ import type { Editor } from "@tiptap/react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { X } from "lucide-react";
 import { AboutDialog } from "./AboutDialog";
+import { AgentAccessSettings } from "./AgentAccessSettings";
 import { AppErrorBoundary } from "./AppErrorBoundary";
 import { DesignSystemSettings } from "./DesignSystemSettings";
 import { DrawerSettings } from "./DrawerSettings";
 import { DrawerMutationDialog } from "./DrawerMutationDialog";
 import { DocumentTabs } from "./DocumentTabs";
 import { EditorToolbar } from "./EditorToolbar";
+import { EncryptedStorageSettings } from "./EncryptedStorageSettings";
 import { ProjectBundleDialog } from "./ProjectBundleDialog";
 import { SettingsDialog, type SettingsTab } from "./SettingsDialog";
 import { UpdateSettings } from "./UpdateSettings";
@@ -22,9 +24,11 @@ import {
   directoryHasEntries,
   initializeWorkspace,
   inspectWorkspaceFolder,
+  listEncryptedWorkspace,
   isTauriRuntime,
   listWorkspace,
   moveWorkspacePath,
+  readEncryptedWorkspaceFile,
   readWorkspaceAsset,
   readWorkspaceFile,
   renameWorkspacePath,
@@ -32,6 +36,8 @@ import {
   selectAndImportDrawerImage,
   selectExportFile,
   selectWorkspaceDirectory,
+  type EncryptedWorkspaceInfo,
+  writeEncryptedWorkspaceFile,
   writeExportFile,
   writeWorkspaceFile,
 } from "../lib/workspace/api";
@@ -113,6 +119,8 @@ const SAMPLE_DRAWER_ROOT = SAMPLE_BUNDLE_ROOT;
 const SETTINGS_TABS: SettingsTab[] = [
   { id: "drawers", label: "Bundles" },
   { id: "design-system", label: "Design System" },
+  { id: "encrypted-storage", label: "Encrypted Storage" },
+  { id: "agent-access", label: "Agent Access" },
   { id: "updates", label: "Updates" },
 ];
 const JSONM_SPEC_URL = "https://github.com/activetwist/jsonm";
@@ -130,6 +138,13 @@ interface PathInputRequest {
 interface ProjectBundleRequest {
   projectPath: string;
   assessment: ProjectRootAssessment;
+}
+
+interface EncryptedSession {
+  rootPath: string;
+  passphrase: string;
+  bundleName: string;
+  generation: number;
 }
 
 const EditorPane = lazy(() => import("./EditorPane").then((module) => ({ default: module.EditorPane })));
@@ -173,6 +188,39 @@ function bundleNameFromPath(rootPath: string): string {
   if (!rootPath) return "";
   if (rootPath === SAMPLE_BUNDLE_ROOT) return "Sample Bundle";
   return rootPath.replace(/\\/g, "/").split("/").filter(Boolean).pop() ?? rootPath;
+}
+
+function encryptedTreeFromInfo(info: EncryptedWorkspaceInfo): WorkspaceEntry {
+  const root: WorkspaceEntry = {
+    name: info.bundleName || bundleNameFromPath(info.rootPath) || "Encrypted Bundle",
+    path: "",
+    kind: "folder",
+    reserved: false,
+    children: [],
+  };
+  for (const documentPath of info.documents.filter((path) => path.endsWith(".md")).sort()) {
+    const parts = documentPath.split("/").filter(Boolean);
+    let cursor = root;
+    for (let index = 0; index < parts.length; index += 1) {
+      const part = parts[index];
+      const childPath = parts.slice(0, index + 1).join("/");
+      const isFile = index === parts.length - 1;
+      let child = cursor.children.find((item) => item.path === childPath);
+      if (!child) {
+        child = {
+          name: part,
+          path: childPath,
+          kind: isFile ? "file" : "folder",
+          fileType: isFile ? "markdown" : undefined,
+          reserved: isFile && (part === "index.md" || part === "log.md"),
+          children: [],
+        };
+        cursor.children.push(child);
+      }
+      if (!isFile) cursor = child;
+    }
+  }
+  return root;
 }
 
 function remapOpenDocumentPath(path: string, plan: DrawerMutationPlan): string {
@@ -243,6 +291,7 @@ export function AppShell() {
   const [validationCollapsed, setValidationCollapsed] = useState(() => localStorage.getItem("onyxwriter.validationCollapsed") === "true");
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(() => new Set());
   const [recentDrawers, setRecentDrawers] = useState<RecentWorkspace[]>(() => loadRecentDrawers());
+  const [encryptedSession, setEncryptedSession] = useState<EncryptedSession | null>(null);
   const [designState, setDesignState] = useState<DesignSystemSettingsState | null>(null);
   const [designError, setDesignError] = useState("");
   const [graphOpen, setGraphOpen] = useState(false);
@@ -263,7 +312,11 @@ export function AppShell() {
   const editorCommandIdRef = useRef(0);
   const executeAppCommandRef = useRef<((command: AppCommand) => Promise<void>) | null>(null);
   const knownPaths = useMemo(() => new Set(markdownPaths(state.tree)), [state.tree]);
-  const activeBundleName = useMemo(() => bundleNameFromPath(state.rootPath), [state.rootPath]);
+  const isEncryptedBundle = Boolean(encryptedSession && state.rootPath === encryptedSession.rootPath);
+  const activeBundleName = useMemo(
+    () => (isEncryptedBundle ? encryptedSession?.bundleName ?? bundleNameFromPath(state.rootPath) : bundleNameFromPath(state.rootPath)),
+    [encryptedSession?.bundleName, isEncryptedBundle, state.rootPath],
+  );
   const linkSuggestions = useMemo(() => {
     const fromPath = state.openDocument?.path;
     if (!fromPath) return [];
@@ -309,6 +362,7 @@ export function AppShell() {
 
   const refreshManagedIndex = useCallback(async (rootPath: string, tree = state.tree) => {
     if (!rootPath || rootPath === SAMPLE_DRAWER_ROOT) return;
+    if (encryptedSession && rootPath === encryptedSession.rootPath) return;
     const directories = indexableDirectoryPaths(tree);
     await Promise.all(
       directories.map(async (directoryPath) => {
@@ -323,7 +377,7 @@ export function AppShell() {
         await writeWorkspaceFile(rootPath, indexPath, updated);
       }),
     );
-  }, [state.tree]);
+  }, [encryptedSession, state.tree]);
 
   const expandAncestors = useCallback((path: string) => {
     const ancestors = ancestorFolderPaths(path);
@@ -358,6 +412,71 @@ export function AppShell() {
     });
   }, []);
 
+  const refreshEncryptedTree = useCallback(async (session: EncryptedSession) => {
+    const info = await listEncryptedWorkspace(session.rootPath, session.passphrase);
+    const tree = encryptedTreeFromInfo(info);
+    setEncryptedSession((current) =>
+      current && current.rootPath === session.rootPath
+        ? { ...current, bundleName: info.bundleName, generation: info.generation }
+        : current,
+    );
+    setState((current) =>
+      current.rootPath === session.rootPath
+        ? {
+            ...current,
+            tree,
+          }
+        : current,
+    );
+    return { info, tree };
+  }, []);
+
+  const readDocumentContents = useCallback(
+    async (rootPath: string, path: string) => {
+      if (encryptedSession && rootPath === encryptedSession.rootPath) {
+        return (await readEncryptedWorkspaceFile(encryptedSession.rootPath, encryptedSession.passphrase, path)).contents;
+      }
+      return readWorkspaceFile(rootPath, path);
+    },
+    [encryptedSession],
+  );
+
+  const mountEncryptedWorkspace = useCallback(
+    async (info: EncryptedWorkspaceInfo, passphrase: string) => {
+      const session: EncryptedSession = {
+        rootPath: info.rootPath,
+        passphrase,
+        bundleName: info.bundleName,
+        generation: info.generation,
+      };
+      const tree = encryptedTreeFromInfo(info);
+      setEncryptedSession(session);
+      const entries = await Promise.all(
+        markdownPaths(tree).map(async (path) => {
+          try {
+            return [path, (await readEncryptedWorkspaceFile(session.rootPath, session.passphrase, path)).contents] as const;
+          } catch {
+            return [path, ""] as const;
+          }
+        }),
+      );
+      setGraphDocuments(Object.fromEntries(entries));
+      setState((current) => ({
+        ...current,
+        rootPath: info.rootPath,
+        tree,
+        selectedPath: "",
+        selectedTreePath: "",
+        openDocument: null,
+        openDocuments: [],
+        saveStatus: "clean",
+        status: `Encrypted bundle unlocked: ${info.bundleName}.`,
+      }));
+      setSettingsOpen(false);
+    },
+    [],
+  );
+
   const setActiveDocument = useCallback((document: OpenDocumentState, status = "") => {
     expandAncestors(document.path);
     setSelectedImagePath("");
@@ -380,11 +499,11 @@ export function AppShell() {
         setActiveDocument(existing, status);
         return;
       }
-      const raw = state.rootPath === SAMPLE_DRAWER_ROOT ? SAMPLE_DOCS[path] ?? SAMPLE_DOC : await readWorkspaceFile(state.rootPath, path);
+      const raw = state.rootPath === SAMPLE_DRAWER_ROOT ? SAMPLE_DOCS[path] ?? SAMPLE_DOC : await readDocumentContents(state.rootPath, path);
       const validation = validateWithConfidence(path, raw, knownPaths);
       setActiveDocument({ path, raw, dirty: false, validation }, status);
     },
-    [knownPaths, setActiveDocument, state.openDocuments, state.rootPath],
+    [knownPaths, readDocumentContents, setActiveDocument, state.openDocuments, state.rootPath],
   );
 
   const selectImagePath = useCallback((path: string) => {
@@ -440,7 +559,7 @@ export function AppShell() {
     const entries = await Promise.all(
       paths.map(async (path) => {
         try {
-          return [path, await readWorkspaceFile(rootPath, path)] as const;
+          return [path, await readDocumentContents(rootPath, path)] as const;
         } catch {
           return [path, ""] as const;
         }
@@ -449,7 +568,7 @@ export function AppShell() {
     const next = Object.fromEntries(entries);
     setGraphDocuments(next);
     return next;
-  }, [state.tree]);
+  }, [readDocumentContents, state.tree]);
 
   const restoreSessionDocuments = useCallback(async (rootPath: string, tree: WorkspaceEntry) => {
     if (!rootPath || rootPath === SAMPLE_DRAWER_ROOT) {
@@ -540,6 +659,7 @@ export function AppShell() {
   const openWorkspacePath = useCallback(
     async (path: string, options: { restoreSession?: boolean } = {}) => {
       try {
+        setEncryptedSession(null);
         const tree = await refreshTree(path);
         await loadGraphDocuments(path, tree);
         const shouldRestoreSession = options.restoreSession ?? true;
@@ -750,7 +870,18 @@ export function AppShell() {
           : current,
       );
       try {
-        await writeWorkspaceFile(rootPath, path, raw);
+        let encryptedWrite = false;
+        if (encryptedSession && rootPath === encryptedSession.rootPath) {
+          const written = await writeEncryptedWorkspaceFile(rootPath, encryptedSession.passphrase, path, raw);
+          encryptedWrite = true;
+          setEncryptedSession((current) =>
+            current && current.rootPath === rootPath
+              ? { ...current, generation: written.generation }
+              : current,
+          );
+        } else {
+          await writeWorkspaceFile(rootPath, path, raw);
+        }
         setState((current) => {
           if (current.rootPath !== rootPath) return current;
           const openDocuments = current.openDocuments.map((document) => {
@@ -768,7 +899,7 @@ export function AppShell() {
             status: "Saved.",
           };
         });
-        const tree = await listWorkspace(rootPath);
+        const tree = encryptedWrite && encryptedSession ? encryptedTreeFromInfo(await listEncryptedWorkspace(rootPath, encryptedSession.passphrase)) : await listWorkspace(rootPath);
         setState((current) => (current.rootPath === rootPath ? { ...current, tree } : current));
         setGraphDocuments((current) => ({ ...current, [path]: raw }));
       } catch (error) {
@@ -783,7 +914,7 @@ export function AppShell() {
         );
       }
     },
-    [],
+    [encryptedSession],
   );
 
   useEffect(() => {
@@ -791,10 +922,18 @@ export function AppShell() {
     if (!dirtyDocuments.length) return;
     const rootPath = state.rootPath;
     const timer = window.setTimeout(() => {
-      void Promise.all(dirtyDocuments.map((document) => saveSnapshot(rootPath, document.path, document.raw, false)));
+      void (async () => {
+        if (encryptedSession && rootPath === encryptedSession.rootPath) {
+          for (const document of dirtyDocuments) {
+            await saveSnapshot(rootPath, document.path, document.raw, false);
+          }
+          return;
+        }
+        await Promise.all(dirtyDocuments.map((document) => saveSnapshot(rootPath, document.path, document.raw, false)));
+      })();
     }, AUTOSAVE_DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [saveSnapshot, state.openDocuments, state.rootPath]);
+  }, [encryptedSession, saveSnapshot, state.openDocuments, state.rootPath]);
 
   useEffect(() => {
     if (!splitDocument || !canAutosaveDocument(state.rootPath, splitDocument)) return;
@@ -810,13 +949,14 @@ export function AppShell() {
 
   useEffect(() => {
     if (!state.rootPath || state.rootPath === SAMPLE_DRAWER_ROOT) return;
+    if (encryptedSession && state.rootPath === encryptedSession.rootPath) return;
     saveWorkspaceSession({
       rootPath: state.rootPath,
       openPaths: state.openDocuments.map((document) => document.path),
       activePath: state.openDocument?.path ?? "",
       updatedAt: new Date().toISOString(),
     });
-  }, [openDocumentPathsKey, state.openDocument?.path, state.rootPath, state.openDocuments]);
+  }, [encryptedSession, openDocumentPathsKey, state.openDocument?.path, state.rootPath, state.openDocuments]);
 
   const save = useCallback(async () => {
     if (!state.openDocument) return;
@@ -882,8 +1022,16 @@ export function AppShell() {
     setState((current) => ({ ...current, status: "Refreshing bundle." }));
     try {
       const dirtyDocuments = state.openDocuments.filter((document) => canAutosaveDocument(rootPath, document));
-      await Promise.all(dirtyDocuments.map((document) => writeWorkspaceFile(rootPath, document.path, document.raw)));
-      const tree = await refreshTree(rootPath);
+      if (encryptedSession && rootPath === encryptedSession.rootPath) {
+        for (const document of dirtyDocuments) {
+          await saveSnapshot(rootPath, document.path, document.raw, false);
+        }
+      } else {
+        await Promise.all(dirtyDocuments.map((document) => writeWorkspaceFile(rootPath, document.path, document.raw)));
+      }
+      const tree = encryptedSession && rootPath === encryptedSession.rootPath
+        ? (await refreshEncryptedTree(encryptedSession)).tree
+        : await refreshTree(rootPath);
       const documents = await loadGraphDocuments(rootPath, tree);
       const nextKnownPaths = new Set(markdownPaths(tree));
       setState((current) => {
@@ -925,7 +1073,7 @@ export function AppShell() {
     } finally {
       setRefreshBusy(false);
     }
-  }, [loadGraphDocuments, refreshTree, state.openDocuments, state.rootPath]);
+  }, [encryptedSession, loadGraphDocuments, refreshEncryptedTree, refreshTree, saveSnapshot, state.openDocuments, state.rootPath]);
 
   const openGraph = useCallback(async () => {
     setSelectedImagePath("");
@@ -935,12 +1083,12 @@ export function AppShell() {
 
   const openSplitView = useCallback(async (path: string) => {
     if (!state.rootPath || state.rootPath === SAMPLE_DRAWER_ROOT) return;
-    const raw = await readWorkspaceFile(state.rootPath, path);
+    const raw = await readDocumentContents(state.rootPath, path);
     setSplitDocument({ path, raw, dirty: false, validation: validateWithConfidence(path, raw, knownPaths) });
     setSelectedImagePath("");
     setGraphOpen(false);
     setState((current) => ({ ...current, selectedTreePath: path, status: `Opened ${path} in split view.` }));
-  }, [knownPaths, state.rootPath]);
+  }, [knownPaths, readDocumentContents, state.rootPath]);
 
   const openGraphDocument = useCallback(
     async (path: string) => {
@@ -1044,6 +1192,10 @@ export function AppShell() {
       setState((current) => ({ ...current, status: "Document actions require a desktop bundle." }));
       return;
     }
+    if (isEncryptedBundle) {
+      setState((current) => ({ ...current, status: "Encrypted bundle structure edits are not available in this alpha." }));
+      return;
+    }
     const targetFolder = selectedFolderPath(state.tree, state.selectedTreePath);
     const defaultPath = [targetFolder, "new-concept.md"].filter(Boolean).join("/");
     setPathInputRequest({
@@ -1054,11 +1206,15 @@ export function AppShell() {
     });
     setPathInputValue(defaultPath);
     setMutationError("");
-  }, [state.rootPath, state.selectedTreePath, state.tree]);
+  }, [isEncryptedBundle, state.rootPath, state.selectedTreePath, state.tree]);
 
   const createFolder = useCallback(() => {
     if (!state.rootPath || state.rootPath === SAMPLE_DRAWER_ROOT) {
       setState((current) => ({ ...current, status: "Document actions require a desktop bundle." }));
+      return;
+    }
+    if (isEncryptedBundle) {
+      setState((current) => ({ ...current, status: "Encrypted bundle structure edits are not available in this alpha." }));
       return;
     }
     const targetFolder = selectedFolderPath(state.tree, state.selectedTreePath);
@@ -1071,7 +1227,7 @@ export function AppShell() {
     });
     setPathInputValue(defaultPath);
     setMutationError("");
-  }, [state.rootPath, state.selectedTreePath, state.tree]);
+  }, [isEncryptedBundle, state.rootPath, state.selectedTreePath, state.tree]);
 
   const stageMutation = useCallback((plan: DrawerMutationPlan) => {
     setMutationError("");
@@ -1081,6 +1237,10 @@ export function AppShell() {
   const renameSelected = useCallback(() => {
     if (!state.rootPath || state.rootPath === SAMPLE_DRAWER_ROOT) {
       setState((current) => ({ ...current, status: "Document actions require a desktop bundle." }));
+      return;
+    }
+    if (isEncryptedBundle) {
+      setState((current) => ({ ...current, status: "Encrypted bundle structure edits are not available in this alpha." }));
       return;
     }
     if (!state.selectedTreePath) {
@@ -1097,7 +1257,7 @@ export function AppShell() {
     });
     setPathInputValue(value);
     setMutationError("");
-  }, [state.rootPath, state.selectedTreePath]);
+  }, [isEncryptedBundle, state.rootPath, state.selectedTreePath]);
 
   const cancelPathInput = useCallback(() => {
     setPathInputRequest(null);
@@ -1137,6 +1297,10 @@ export function AppShell() {
       setState((current) => ({ ...current, status: "Document actions require a desktop bundle." }));
       return;
     }
+    if (isEncryptedBundle) {
+      setState((current) => ({ ...current, status: "Encrypted bundle structure edits are not available in this alpha." }));
+      return;
+    }
     if (!state.selectedTreePath) {
       setState((current) => ({ ...current, status: "Select a document or folder to delete." }));
       return;
@@ -1146,12 +1310,16 @@ export function AppShell() {
     } catch (error) {
       setState((current) => ({ ...current, status: error instanceof Error ? error.message : String(error) }));
     }
-  }, [stageMutation, state.rootPath, state.selectedTreePath, state.tree]);
+  }, [isEncryptedBundle, stageMutation, state.rootPath, state.selectedTreePath, state.tree]);
 
   const movePath = useCallback(
     (sourcePath: string, destinationFolderPath: string) => {
       if (!state.rootPath || state.rootPath === SAMPLE_DRAWER_ROOT) {
         setState((current) => ({ ...current, status: "Browser preview does not move bundle files." }));
+        return;
+      }
+      if (isEncryptedBundle) {
+        setState((current) => ({ ...current, status: "Encrypted bundle structure edits are not available in this alpha." }));
         return;
       }
       try {
@@ -1160,7 +1328,7 @@ export function AppShell() {
         setState((current) => ({ ...current, status: error instanceof Error ? error.message : String(error) }));
       }
     },
-    [stageMutation, state.rootPath, state.tree],
+    [isEncryptedBundle, stageMutation, state.rootPath, state.tree],
   );
 
   const applyMutation = useCallback(async () => {
@@ -1434,7 +1602,7 @@ export function AppShell() {
         bundleName={activeBundleName}
         tree={state.tree}
         selectedPath={state.selectedTreePath || state.selectedPath}
-        canMutateDocuments={Boolean(state.rootPath && state.rootPath !== SAMPLE_DRAWER_ROOT)}
+        canMutateDocuments={Boolean(state.rootPath && state.rootPath !== SAMPLE_DRAWER_ROOT && !isEncryptedBundle)}
         collapsed={explorerCollapsed}
         collapsedFolders={collapsedFolders}
         allFoldersCollapsed={allFoldersCollapsed}
@@ -1578,6 +1746,16 @@ export function AppShell() {
             onReset={resetTheme}
             onOpenSpec={openJsonmSpec}
           />
+        ) : settingsTab === "encrypted-storage" ? (
+          <EncryptedStorageSettings
+            currentBundlePath={isEncryptedBundle ? "" : state.rootPath}
+            encryptedBundlePath={encryptedSession?.rootPath ?? ""}
+            encryptedBundleName={encryptedSession?.bundleName ?? ""}
+            encryptedGeneration={encryptedSession?.generation ?? null}
+            onUnlock={mountEncryptedWorkspace}
+          />
+        ) : settingsTab === "agent-access" ? (
+          <AgentAccessSettings currentBundlePath={state.rootPath} />
         ) : settingsTab === "updates" ? (
           <UpdateSettings />
         ) : (

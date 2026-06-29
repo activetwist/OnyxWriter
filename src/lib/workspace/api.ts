@@ -12,6 +12,28 @@ export interface WorkspaceAsset {
   data: number[];
 }
 
+export interface EncryptedWorkspaceInfo {
+  ok: boolean;
+  rootPath: string;
+  generation: number;
+  bundleName: string;
+  documents: string[];
+}
+
+export interface EncryptedDocumentRead {
+  path: string;
+  contents: string;
+  generation: number;
+  version: number;
+}
+
+export interface EncryptedDocumentWrite {
+  ok: boolean;
+  path: string;
+  generation: number;
+  version: number;
+}
+
 export async function selectWorkspaceDirectory(title = "Open Onyx Workspace"): Promise<string | null> {
   if (!isTauriRuntime()) return null;
   const selected = await open({ directory: true, multiple: false, title });
@@ -116,6 +138,38 @@ export async function moveWorkspacePath(root: string, relativePath: string, dest
 
 export async function deleteWorkspacePath(root: string, relativePath: string): Promise<void> {
   await invoke("delete_path", { root, relativePath });
+}
+
+export async function initializeEncryptedWorkspace(root: string, passphrase: string, name: string): Promise<EncryptedWorkspaceInfo> {
+  return invoke<EncryptedWorkspaceInfo>("initialize_encrypted_folder", { root, passphrase, name });
+}
+
+export async function openEncryptedWorkspace(root: string, passphrase: string): Promise<EncryptedWorkspaceInfo> {
+  return invoke<EncryptedWorkspaceInfo>("encrypted_folder_info", { root, passphrase });
+}
+
+export async function listEncryptedWorkspace(root: string, passphrase: string): Promise<EncryptedWorkspaceInfo> {
+  return invoke<EncryptedWorkspaceInfo>("list_encrypted_folder", { root, passphrase });
+}
+
+export async function readEncryptedWorkspaceFile(root: string, passphrase: string, relativePath: string): Promise<EncryptedDocumentRead> {
+  return invoke<EncryptedDocumentRead>("read_encrypted_document", { root, passphrase, relativePath });
+}
+
+export async function writeEncryptedWorkspaceFile(
+  root: string,
+  passphrase: string,
+  relativePath: string,
+  contents: string,
+  expectedGeneration?: number,
+): Promise<EncryptedDocumentWrite> {
+  return invoke<EncryptedDocumentWrite>("write_encrypted_document", {
+    root,
+    passphrase,
+    relativePath,
+    contents,
+    expectedGeneration,
+  });
 }
 
 export function isTauriRuntime(): boolean {

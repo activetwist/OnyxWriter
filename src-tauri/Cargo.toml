@@ -1,6 +1,6 @@
 [package]
 name = "onyxwriter"
-version = "0.1.9"
+version = "0.1.10"
 description = "A local-first Open Knowledge Format editor"
 authors = ["onyxwriter contributors"]
 license = "MIT"
@@ -16,8 +16,14 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
+aes-gcm = "0.10"
+base64 = "0.22"
+hex = "0.4"
+rand = "0.8"
+scrypt = "0.11"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+sha2 = "0.10"
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"

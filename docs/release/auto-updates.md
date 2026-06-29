@@ -96,8 +96,8 @@ Linux in-app updater support is deferred until AppImage packaging is reliable. D
 3. Tag the updater-enabled release:
 
 ```sh
-git tag v0.1.9-alpha
-git push origin v0.1.9-alpha
+git tag v0.1.10-alpha
+git push origin v0.1.10-alpha
 ```
 
 4. Wait for GitHub Actions to produce a draft release.

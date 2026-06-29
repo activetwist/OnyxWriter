@@ -4,6 +4,15 @@ This guide is a portable instruction file for using Codex, Claude, Cursor, Winds
 
 The goal is simple: agents may create and update project knowledge as OKF-compatible Markdown without making the bundle noisy, invalid, or invisible in Onyx Writer.
 
+## Preferred Safe Write Path
+
+When available, use Onyx Writer's governed local tools instead of writing files directly:
+
+- Use the `onyx` CLI for shell-first agents and scripts.
+- Use the `onyx-mcp` stdio sidecar for MCP-capable agent IDEs.
+
+Both surfaces require an explicit bundle root and enforce the Onyx bundle rules for safe paths, reserved files, OKF validation, link repair, deterministic indexes, and stale-write conflicts. See [onyx-cli.md](onyx-cli.md) and [onyx-mcp.md](onyx-mcp.md).
+
 ## Default Bundle Root
 
 Use this environment variable or plain instruction in agent sessions:
@@ -26,6 +35,7 @@ Place this block in `AGENTS.md`, `CLAUDE.md`, Cursor rules, Windsurf rules, or a
 Use `.plandocs` as the Onyx Writer bundle root unless the user specifies another path.
 
 When creating or editing project knowledge documents:
+- Prefer the `onyx` CLI or `onyx-mcp` tools when they are available in the environment.
 - Treat `.plandocs` as a first-class workspace even though it is a hidden directory.
 - Create `.plandocs/index.md` if it does not exist.
 - Do not use `index.md` or `log.md` as concept documents; they are reserved system files.
@@ -37,7 +47,7 @@ When creating or editing project knowledge documents:
 - Store images under a bundle-local asset folder such as `.plandocs/assets/images/` and reference them with Markdown image syntax.
 - Ignore development and generated folders when scanning or linking: `.git`, `node_modules`, `dist`, `build`, `target`, `.venv`, `venv`, `__pycache__`, `.idea`, `.vscode`, `coverage`, and `vendor`.
 
-Before finishing a documentation task, verify that changed concept documents have YAML frontmatter, a non-empty `type`, and links that resolve inside the Onyx bundle when they are intended to be local links.
+Before finishing a documentation task, run `onyx bundle validate --root .plandocs --json` when the CLI is available. Otherwise verify that changed concept documents have YAML frontmatter, a non-empty `type`, and links that resolve inside the Onyx bundle when they are intended to be local links.
 ```
 
 ## Initialize a Bundle

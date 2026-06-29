@@ -6,7 +6,7 @@ The app also includes a JSONM design-system runtime. JSONM definitions are valid
 
 ## Status
 
-Onyx Writer `0.1.9-alpha` is the current public alpha release. It is useful for testing local OKF bundle editing now, but it should still be treated as early software. Keep backups of important bundles and expect the OKF support surface to evolve as the format and editor mature.
+Onyx Writer `0.1.10-alpha` is the current public alpha release. It is useful for testing local OKF bundle editing now, but it should still be treated as early software. Keep backups of important bundles and expect the OKF support surface to evolve as the format and editor mature.
 
 ## Features
 
@@ -17,10 +17,12 @@ Onyx Writer `0.1.9-alpha` is the current public alpha release. It is useful for 
 - Interactive bundle graph with folders, documents, internal links, broken links, local physics, hover focus, and node selection.
 - JSONM-driven app theming with bundled design-system archetypes and local imports.
 - Developer-project safeguards for OKF bundles nested inside source repositories.
+- Governed local agent access through the `onyx` CLI and `onyx-mcp` stdio sidecar.
+- Experimental encrypted bundle storage with local encryption, desktop unlock/edit/save, and CLI workflows.
 
 ## Downloads
 
-The `v0.1.9-alpha` GitHub release includes:
+The `v0.1.10-alpha` GitHub release includes:
 
 - macOS Apple Silicon DMG
 - macOS updater `.app.tar.gz` archive and signature metadata
@@ -33,7 +35,7 @@ The `v0.1.9-alpha` GitHub release includes:
 
 The macOS app is not signed or notarized yet, so macOS may show a warning on first launch. Linux AppImage builds are not part of this alpha.
 
-`v0.1.1-alpha` was the first updater-enabled release. `v0.1.9-alpha` is intended to be discoverable from prior updater-enabled builds through the signed macOS and Windows updater paths. Linux DEB/RPM packages remain manual update assets. See [docs/release/auto-updates.md](docs/release/auto-updates.md).
+`v0.1.1-alpha` was the first updater-enabled release. `v0.1.10-alpha` is intended to be discoverable from prior updater-enabled builds through the signed macOS and Windows updater paths. Linux DEB/RPM packages remain manual update assets. See [docs/release/auto-updates.md](docs/release/auto-updates.md).
 
 ## Setup
 
@@ -83,6 +85,10 @@ Onyx Writer does not create `.onyxwriter`, `.obsidian`, or other hidden app-priv
 
 For agentic IDE workflows, Onyx Writer can also be used as a private document observability surface in a `.plandocs` bundle. See [docs/guides/onyx-agent-authoring.md](docs/guides/onyx-agent-authoring.md) for portable Codex, Claude, Cursor, and Windsurf authoring instructions.
 
+The `onyx` CLI and `onyx-mcp` stdio sidecar expose governed local bundle operations for agents and scripts. See [docs/guides/onyx-cli.md](docs/guides/onyx-cli.md) and [docs/guides/onyx-mcp.md](docs/guides/onyx-mcp.md).
+
+Encrypted bundle storage is experimental. Onyx Writer can create and unlock encrypted folder-backed bundles from Settings, then edit and save decrypted OKF documents in the desktop session while storing only encrypted manifests and encrypted objects on disk. See [docs/guides/encrypted-bundles.md](docs/guides/encrypted-bundles.md).
+
 ## Editing and Autosave
 
 Bundle-backed documents autosave after a short debounce using the same scoped Tauri write path as manual save. The toolbar shows `Unsaved`, `Saving`, `Saved`, or `Error`, and manual save remains available as a fallback. Browser sample bundles are preview-only and do not write to disk.
@@ -113,6 +119,7 @@ This product repository intentionally excludes local planning/runtime material s
 - Linux AppImage packaging is not available yet.
 - `v0.1.1-alpha` should be installed manually; `v0.1.2-alpha` and later updater-enabled macOS/Windows releases can use the in-app updater path.
 - Windows x64 and Windows ARM64 builds are published from GitHub Actions, but should still be treated as alpha packages.
+- Encrypted bundle structure mutations are deferred; the v0.1.10 alpha supports desktop create/unlock/open/edit/save/refresh for encrypted documents.
 - There is no cloud sync, account system, collaboration, or hosted storage.
 
 ## Contributing and Support

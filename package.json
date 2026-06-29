@@ -1,9 +1,13 @@
 {
   "name": "onyxwriter",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "private": true,
   "type": "module",
   "license": "MIT",
+  "bin": {
+    "onyx": "./bin/onyx.mjs",
+    "onyx-mcp": "./src/mcp/onyx-mcp.mjs"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
@@ -15,6 +19,8 @@
     "tauri:dev": "tauri dev",
     "tauri:check": "cargo check --manifest-path src-tauri/Cargo.toml",
     "tauri:build": "tauri build",
+    "onyx": "node ./bin/onyx.mjs",
+    "onyx:mcp": "node ./src/mcp/onyx-mcp.mjs",
     "license:check": "node -e \"const p=require('./package.json'); const names=[...Object.keys(p.dependencies||{}),...Object.keys(p.devDependencies||{})]; const blocked=names.filter(n=>n.startsWith('@tiptap-pro/')||/gpl|agpl/i.test(n)); if(blocked.length){console.error('Blocked dependencies:', blocked.join(', ')); process.exit(1)} console.log('Dependency name policy passed')\""
   },
   "dependencies": {
