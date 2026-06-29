@@ -1936,7 +1936,9 @@ button {
   color: var(--ow-text);
 }
 
-.drawer-settings {
+.drawer-settings,
+.agent-access-settings,
+.encrypted-storage-settings {
   display: grid;
   gap: var(--ow-space-md);
   overflow: auto;
@@ -1968,6 +1970,68 @@ button {
   margin: 0;
   color: var(--ow-text-muted);
   line-height: 1.5;
+}
+
+.settings-field {
+  display: grid;
+  gap: 6px;
+  max-width: 760px;
+  color: var(--ow-text-muted);
+  font-size: var(--ow-type-sm);
+}
+
+.settings-field input {
+  min-height: 34px;
+  border: 1px solid var(--ow-border);
+  border-radius: var(--ow-radius-sm);
+  background: var(--ow-surface);
+  color: var(--ow-text);
+  padding: 0 10px;
+  font: inherit;
+}
+
+.settings-field input:focus {
+  border-color: var(--ow-focus);
+  outline: 2px solid color-mix(in srgb, var(--ow-focus) 18%, transparent);
+}
+
+.settings-field-row {
+  display: flex;
+  gap: var(--ow-space-sm);
+}
+
+.settings-field-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.settings-status {
+  color: var(--ow-success-text);
+}
+
+.agent-snippet-section {
+  max-width: 900px;
+}
+
+.agent-snippet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ow-space-sm);
+}
+
+.agent-snippet {
+  overflow: auto;
+  margin: 0;
+  border: 1px solid var(--ow-border);
+  border-radius: var(--ow-radius-sm);
+  background: var(--ow-surface-alt);
+  color: var(--ow-text);
+  padding: 10px 12px;
+  font-family: var(--ow-font-mono);
+  font-size: var(--ow-type-sm);
+  line-height: 1.5;
+  white-space: pre-wrap;
 }
 
 .drawer-actions {
