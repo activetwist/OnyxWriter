@@ -1,6 +1,6 @@
 # Encrypted Bundles Guide
 
-Encrypted storage is experimental in `v0.1.10-alpha`. Use it on copied bundles until the feature graduates from alpha.
+Encrypted storage is experimental in the `v0.1.10-alpha` and later alpha line. Use it on copied bundles until the feature graduates from alpha.
 
 ## What It Does
 

@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { UpdateSettings } from "../UpdateSettings";
 import { checkForOnyxUpdate } from "../../lib/updater/api";
+import { ONYX_APP_VERSION } from "../../lib/appInfo";
 
 vi.mock("../../lib/updater/api", () => ({
   checkForOnyxUpdate: vi.fn(),
@@ -25,7 +26,7 @@ describe("UpdateSettings", () => {
   it("shows the installed version before checking for updates", async () => {
     const host = await renderUpdateSettings();
 
-    expect(host.textContent).toContain("Installed version: 0.1.9");
+    expect(host.textContent).toContain(`Installed version: ${ONYX_APP_VERSION}`);
   });
 
   it("shows a no-update status after checking", async () => {
