@@ -19,6 +19,7 @@ const workspaceApi = vi.hoisted(() => ({
       hasMarkdown: false,
     }),
   ),
+  isEncryptedWorkspace: vi.fn(() => Promise.resolve({ protected: false, rootPath: "/tmp/Onyx-Test" })),
   isTauriRuntime: vi.fn(() => true),
   listWorkspace: vi.fn(() => Promise.resolve(tree)),
   moveWorkspacePath: vi.fn(() => Promise.resolve()),

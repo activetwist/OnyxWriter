@@ -6,7 +6,7 @@ The app also includes a JSONM design-system runtime. JSONM definitions are valid
 
 ## Status
 
-Onyx Writer `0.1.11-alpha` is the current public alpha release. It is useful for testing local OKF bundle editing now, but it should still be treated as early software. Keep backups of important bundles and expect the OKF support surface to evolve as the format and editor mature.
+Onyx Writer `0.1.12-alpha` is the current public alpha release. It is useful for testing local OKF bundle editing now, but it should still be treated as early software. Keep backups of important bundles and expect the OKF support surface to evolve as the format and editor mature.
 
 ## Features
 
@@ -18,11 +18,11 @@ Onyx Writer `0.1.11-alpha` is the current public alpha release. It is useful for
 - JSONM-driven app theming with bundled design-system archetypes and local imports.
 - Developer-project safeguards for OKF bundles nested inside source repositories.
 - Governed local agent access through the `onyx` CLI and `onyx-mcp` stdio sidecar.
-- Experimental encrypted bundle storage with local encryption, desktop unlock/edit/save, and CLI workflows.
+- Experimental protected bundle storage with local encryption, passphrase-gated desktop unlock/edit/save, protected-copy creation, and CLI workflows.
 
 ## Downloads
 
-The `v0.1.11-alpha` GitHub release includes:
+The `v0.1.12-alpha` GitHub release includes:
 
 - macOS Apple Silicon DMG
 - macOS updater `.app.tar.gz` archive and signature metadata
@@ -35,7 +35,7 @@ The `v0.1.11-alpha` GitHub release includes:
 
 The macOS app is not signed or notarized yet, so macOS may show a warning on first launch. Linux AppImage builds are not part of this alpha.
 
-`v0.1.1-alpha` was the first updater-enabled release. `v0.1.11-alpha` is intended to be discoverable from prior updater-enabled builds through the signed macOS and Windows updater paths. Linux DEB/RPM packages remain manual update assets. See [docs/release/auto-updates.md](docs/release/auto-updates.md).
+`v0.1.1-alpha` was the first updater-enabled release. `v0.1.12-alpha` is intended to be discoverable from prior updater-enabled builds through the signed macOS and Windows updater paths. Linux DEB/RPM packages remain manual update assets. See [docs/release/auto-updates.md](docs/release/auto-updates.md).
 
 ## Setup
 
@@ -87,7 +87,7 @@ For agentic IDE workflows, Onyx Writer can also be used as a private document ob
 
 The `onyx` CLI and `onyx-mcp` stdio sidecar expose governed local bundle operations for agents and scripts. See [docs/guides/onyx-cli.md](docs/guides/onyx-cli.md) and [docs/guides/onyx-mcp.md](docs/guides/onyx-mcp.md).
 
-Encrypted bundle storage is experimental. Onyx Writer can create and unlock encrypted folder-backed bundles from Settings, then edit and save decrypted OKF documents in the desktop session while storing only encrypted manifests and encrypted objects on disk. See [docs/guides/encrypted-bundles.md](docs/guides/encrypted-bundles.md).
+Protected bundle storage is experimental. Onyx Writer can create and unlock encrypted folder-backed protected bundles from Settings, prompt for the passphrase when a protected bundle is opened through the normal bundle picker, and create a protected copy of the current standard bundle. Protected bundles store only encrypted manifests and encrypted document objects on disk. See [docs/guides/encrypted-bundles.md](docs/guides/encrypted-bundles.md).
 
 ## Editing and Autosave
 
@@ -119,7 +119,7 @@ This product repository intentionally excludes local planning/runtime material s
 - Linux AppImage packaging is not available yet.
 - `v0.1.1-alpha` should be installed manually; `v0.1.2-alpha` and later updater-enabled macOS/Windows releases can use the in-app updater path.
 - Windows x64 and Windows ARM64 builds are published from GitHub Actions, but should still be treated as alpha packages.
-- Encrypted bundle structure mutations are deferred; the v0.1.10 and later alpha line supports desktop create/unlock/open/edit/save/refresh for encrypted documents.
+- Protected bundle structure mutations are deferred; the v0.1.12 alpha line supports desktop create/unlock/open/edit/save/refresh for protected documents and protected-copy creation from a standard bundle.
 - There is no cloud sync, account system, collaboration, or hosted storage.
 
 ## Contributing and Support

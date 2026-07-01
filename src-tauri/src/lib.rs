@@ -8,8 +8,8 @@ use design_system_fs::{
     read_design_system_settings, save_imported_design_system, write_design_system_settings,
 };
 use encrypted_storage::{
-    encrypted_folder_info, initialize_encrypted_folder, list_encrypted_folder,
-    read_encrypted_document, write_encrypted_document,
+    encrypted_folder_info, initialize_encrypted_folder, is_encrypted_folder, list_encrypted_folder,
+    protect_standard_folder, read_encrypted_document, write_encrypted_document,
 };
 use okf_fs::{
     create_folder, create_markdown_file, delete_path, directory_has_entries, import_image_asset,
@@ -49,7 +49,9 @@ pub fn run() {
             delete_imported_design_system,
             read_design_system_settings,
             write_design_system_settings,
+            is_encrypted_folder,
             initialize_encrypted_folder,
+            protect_standard_folder,
             encrypted_folder_info,
             list_encrypted_folder,
             read_encrypted_document,

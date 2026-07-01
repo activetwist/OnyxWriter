@@ -1,6 +1,6 @@
-# Encrypted Bundles Guide
+# Protected Bundles Guide
 
-Encrypted storage is experimental in the `v0.1.10-alpha` and later alpha line. Use it on copied bundles until the feature graduates from alpha.
+Protected bundle storage is experimental in the `v0.1.12-alpha` line. Keep recoverable backups until the feature graduates from alpha.
 
 ## What It Does
 
@@ -8,7 +8,19 @@ Onyx Writer encrypts bundle content locally, then writes encrypted data to a fol
 
 Providers do not receive plaintext documents, plaintext assets, plaintext keys, or decrypted manifests. Providers can still see fixed control filenames, encrypted blob count, approximate size, and update timing.
 
-## Encrypted Folder Mode
+## Desktop Protected Folder Mode
+
+The desktop app can:
+
+- Create a new protected bundle from Settings.
+- Detect a protected bundle when you use Open Bundle.
+- Prompt for the passphrase before documents, tabs, search, validation, or graph data are mounted.
+- Lock a protected bundle from Settings, clearing session passphrase state and decrypted document state.
+- Create a protected copy of the current standard bundle into an empty destination folder.
+
+The protected-copy workflow leaves the original standard bundle unchanged for alpha safety. Verify the protected copy before archiving or deleting the source bundle.
+
+## CLI Encrypted Folder Mode
 
 Create an encrypted folder:
 
@@ -73,5 +85,7 @@ A future dumb host should provide only blob/object storage, version pointers, co
 - Metadata leakage is reduced, not eliminated.
 - Provider atomicity varies.
 - Conflicts are detected, not automatically merged.
-- Desktop UI can create, unlock, open, edit, save, and refresh encrypted folder documents. Structure mutations are deferred for encrypted bundles.
+- Desktop UI can create, unlock, open, edit, save, and refresh protected documents.
+- Protected-copy creation currently copies Markdown documents into the protected folder. Asset encryption is deferred.
+- Structure mutations are deferred for protected bundles.
 - No Onyx-hosted remote service exists in this milestone.

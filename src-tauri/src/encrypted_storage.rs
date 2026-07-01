@@ -120,6 +120,13 @@ pub struct EncryptedFolderInfo {
 
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct ProtectedFolderProbe {
+    protected: bool,
+    root_path: String,
+}
+
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct EncryptedDocumentRead {
     path: String,
     contents: String,
@@ -134,6 +141,18 @@ pub struct EncryptedDocumentWrite {
     path: String,
     generation: u64,
     version: u32,
+}
+
+#[tauri::command]
+pub fn is_encrypted_folder(root: String) -> Result<ProtectedFolderProbe, String> {
+    let root_path = fs::canonicalize(root).map_err(|e| format!("folder not found: {e}"))?;
+    if !root_path.is_dir() {
+        return Err("folder root must be a directory".into());
+    }
+    Ok(ProtectedFolderProbe {
+        protected: root_path.join(HEADER_FILE).exists(),
+        root_path: root_path.to_string_lossy().to_string(),
+    })
 }
 
 #[tauri::command]
@@ -205,6 +224,71 @@ pub fn initialize_encrypted_folder(
     manifest = put_document(&root_path, &data_key, manifest, "log.md", DEFAULT_LOG, 1)?;
     publish_manifest(&root_path, &data_key, &manifest)?;
     info_from_manifest(&root_path, manifest)
+}
+
+#[tauri::command]
+pub fn protect_standard_folder(
+    source_root: String,
+    target_root: String,
+    passphrase: String,
+    name: Option<String>,
+) -> Result<EncryptedFolderInfo, String> {
+    let source_path =
+        fs::canonicalize(source_root).map_err(|e| format!("source bundle not found: {e}"))?;
+    if !source_path.is_dir() {
+        return Err("source bundle must be a directory".into());
+    }
+    let target_path = PathBuf::from(&target_root);
+    fs::create_dir_all(&target_path).map_err(|e| format!("create protected folder failed: {e}"))?;
+    let target_path =
+        fs::canonicalize(target_path).map_err(|e| format!("protected folder not found: {e}"))?;
+    if source_path == target_path {
+        return Err(
+            "choose an empty protected destination folder outside the current standard bundle"
+                .into(),
+        );
+    }
+    if target_path.join(HEADER_FILE).exists() {
+        return Err("protected destination already contains an encrypted bundle".into());
+    }
+    let visible_entries = fs::read_dir(&target_path)
+        .map_err(|e| format!("read protected destination failed: {e}"))?
+        .filter_map(Result::ok)
+        .filter(|entry| entry.file_name().to_string_lossy() != ".DS_Store")
+        .count();
+    if visible_entries > 0 {
+        return Err("protected destination folder must be empty".into());
+    }
+
+    let info = initialize_encrypted_folder(
+        target_path.to_string_lossy().to_string(),
+        passphrase.clone(),
+        name,
+    )?;
+    let mut session = open_session(&info.root_path, &passphrase)?;
+    let markdown_files = collect_markdown_files(&source_path, &source_path)?;
+    for (relative_path, full_path) in markdown_files {
+        let contents = fs::read_to_string(&full_path)
+            .map_err(|e| format!("read source document failed: {relative_path}: {e}"))?;
+        let version = session
+            .manifest
+            .documents
+            .get(&relative_path)
+            .map(|entry| entry.version + 1)
+            .unwrap_or(1);
+        session.manifest = put_document(
+            &session.root_path,
+            &session.data_key,
+            session.manifest,
+            &relative_path,
+            &contents,
+            version,
+        )?;
+    }
+    session.manifest.generation += 1;
+    session.manifest.updated_at = iso_now();
+    publish_manifest(&session.root_path, &session.data_key, &session.manifest)?;
+    info_from_manifest(&session.root_path, session.manifest)
 }
 
 #[tauri::command]
@@ -561,6 +645,55 @@ fn info_from_manifest(root_path: &Path, manifest: Manifest) -> Result<EncryptedF
     })
 }
 
+fn collect_markdown_files(root_path: &Path, path: &Path) -> Result<Vec<(String, PathBuf)>, String> {
+    let mut out = Vec::new();
+    if path != root_path {
+        if let Some(name) = path.file_name().and_then(|value| value.to_str()) {
+            if matches!(
+                name,
+                ".git"
+                    | ".hg"
+                    | ".svn"
+                    | "node_modules"
+                    | "dist"
+                    | "build"
+                    | "target"
+                    | ".venv"
+                    | "venv"
+                    | "__pycache__"
+                    | ".idea"
+                    | ".vscode"
+                    | "coverage"
+                    | "vendor"
+                    | STORAGE_DIR
+            ) {
+                return Ok(out);
+            }
+        }
+    }
+    for entry in fs::read_dir(path).map_err(|e| format!("read source bundle failed: {e}"))? {
+        let entry = entry.map_err(|e| format!("read source bundle failed: {e}"))?;
+        let child_path = entry.path();
+        let metadata = entry
+            .metadata()
+            .map_err(|e| format!("read source metadata failed: {e}"))?;
+        if metadata.is_dir() {
+            out.extend(collect_markdown_files(root_path, &child_path)?);
+        } else if child_path.extension().and_then(|value| value.to_str()) == Some("md") {
+            out.push((rel_string(root_path, &child_path)?, child_path));
+        }
+    }
+    out.sort_by(|a, b| a.0.cmp(&b.0));
+    Ok(out)
+}
+
+fn rel_string(root: &Path, path: &Path) -> Result<String, String> {
+    let rel = path
+        .strip_prefix(root)
+        .map_err(|_| "source entry escapes bundle".to_string())?;
+    Ok(rel.to_string_lossy().replace('\\', "/"))
+}
+
 fn write_json_atomic<T: Serialize>(path: &Path, value: &T) -> Result<(), String> {
     let data =
         serde_json::to_vec_pretty(value).map_err(|e| format!("serialize json failed: {e}"))?;
@@ -631,5 +764,55 @@ mod tests {
         assert!(stale.unwrap_err().contains("conflict"));
         assert!(read_encrypted_document(root.clone(), "wrong".into(), "index.md".into()).is_err());
         let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn protect_standard_folder_copies_markdown_into_empty_encrypted_destination() {
+        let source = std::env::temp_dir().join(format!(
+            "onyx-standard-source-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let target = std::env::temp_dir().join(format!(
+            "onyx-protected-target-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir_all(source.join("notes")).unwrap();
+        fs::write(
+            source.join("notes").join("alpha.md"),
+            "---\ntype: Note\ntitle: Alpha\n---\n\n# Alpha\n",
+        )
+        .unwrap();
+        let info = protect_standard_folder(
+            source.to_string_lossy().to_string(),
+            target.to_string_lossy().to_string(),
+            "secret".into(),
+            Some("Protected".into()),
+        )
+        .unwrap();
+        assert_eq!(info.bundle_name, "Protected");
+        assert!(info.documents.contains(&"notes/alpha.md".into()));
+        assert!(target.join(HEADER_FILE).exists());
+        assert!(!target.join("notes").join("alpha.md").exists());
+        let read = read_encrypted_document(
+            target.to_string_lossy().to_string(),
+            "secret".into(),
+            "notes/alpha.md".into(),
+        )
+        .unwrap();
+        assert!(read.contents.contains("# Alpha"));
+        assert!(read_encrypted_document(
+            target.to_string_lossy().to_string(),
+            "wrong".into(),
+            "notes/alpha.md".into()
+        )
+        .is_err());
+        let _ = fs::remove_dir_all(source);
+        let _ = fs::remove_dir_all(target);
     }
 }

@@ -20,6 +20,11 @@ export interface EncryptedWorkspaceInfo {
   documents: string[];
 }
 
+export interface ProtectedWorkspaceProbe {
+  protected: boolean;
+  rootPath: string;
+}
+
 export interface EncryptedDocumentRead {
   path: string;
   contents: string;
@@ -142,6 +147,19 @@ export async function deleteWorkspacePath(root: string, relativePath: string): P
 
 export async function initializeEncryptedWorkspace(root: string, passphrase: string, name: string): Promise<EncryptedWorkspaceInfo> {
   return invoke<EncryptedWorkspaceInfo>("initialize_encrypted_folder", { root, passphrase, name });
+}
+
+export async function isEncryptedWorkspace(root: string): Promise<ProtectedWorkspaceProbe> {
+  return invoke<ProtectedWorkspaceProbe>("is_encrypted_folder", { root });
+}
+
+export async function protectStandardWorkspace(
+  sourceRoot: string,
+  targetRoot: string,
+  passphrase: string,
+  name: string,
+): Promise<EncryptedWorkspaceInfo> {
+  return invoke<EncryptedWorkspaceInfo>("protect_standard_folder", { sourceRoot, targetRoot, passphrase, name });
 }
 
 export async function openEncryptedWorkspace(root: string, passphrase: string): Promise<EncryptedWorkspaceInfo> {

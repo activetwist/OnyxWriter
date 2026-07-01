@@ -11,6 +11,7 @@ import { DrawerMutationDialog } from "./DrawerMutationDialog";
 import { DocumentTabs } from "./DocumentTabs";
 import { EditorToolbar } from "./EditorToolbar";
 import { EncryptedStorageSettings } from "./EncryptedStorageSettings";
+import { ProtectedBundleUnlockDialog } from "./ProtectedBundleUnlockDialog";
 import { ProjectBundleDialog } from "./ProjectBundleDialog";
 import { SettingsDialog, type SettingsTab } from "./SettingsDialog";
 import { UpdateSettings } from "./UpdateSettings";
@@ -24,6 +25,7 @@ import {
   directoryHasEntries,
   initializeWorkspace,
   inspectWorkspaceFolder,
+  isEncryptedWorkspace,
   listEncryptedWorkspace,
   isTauriRuntime,
   listWorkspace,
@@ -119,7 +121,7 @@ const SAMPLE_DRAWER_ROOT = SAMPLE_BUNDLE_ROOT;
 const SETTINGS_TABS: SettingsTab[] = [
   { id: "drawers", label: "Bundles" },
   { id: "design-system", label: "Design System" },
-  { id: "encrypted-storage", label: "Encrypted Storage" },
+  { id: "encrypted-storage", label: "Protected Bundles" },
   { id: "agent-access", label: "Agent Access" },
   { id: "updates", label: "Updates" },
 ];
@@ -138,6 +140,10 @@ interface PathInputRequest {
 interface ProjectBundleRequest {
   projectPath: string;
   assessment: ProjectRootAssessment;
+}
+
+interface ProtectedUnlockRequest {
+  rootPath: string;
 }
 
 interface EncryptedSession {
@@ -192,7 +198,7 @@ function bundleNameFromPath(rootPath: string): string {
 
 function encryptedTreeFromInfo(info: EncryptedWorkspaceInfo): WorkspaceEntry {
   const root: WorkspaceEntry = {
-    name: info.bundleName || bundleNameFromPath(info.rootPath) || "Encrypted Bundle",
+    name: info.bundleName || bundleNameFromPath(info.rootPath) || "Protected Bundle",
     path: "",
     kind: "folder",
     reserved: false,
@@ -300,6 +306,7 @@ export function AppShell() {
   const [pendingMutation, setPendingMutation] = useState<DrawerMutationPlan | null>(null);
   const [pathInputRequest, setPathInputRequest] = useState<PathInputRequest | null>(null);
   const [projectBundleRequest, setProjectBundleRequest] = useState<ProjectBundleRequest | null>(null);
+  const [protectedUnlockRequest, setProtectedUnlockRequest] = useState<ProtectedUnlockRequest | null>(null);
   const [pathInputValue, setPathInputValue] = useState("");
   const [mutationError, setMutationError] = useState("");
   const [mutationBusy, setMutationBusy] = useState(false);
@@ -451,6 +458,8 @@ export function AppShell() {
       };
       const tree = encryptedTreeFromInfo(info);
       setEncryptedSession(session);
+      setProtectedUnlockRequest(null);
+      setRecentDrawers(rememberDrawer(info.rootPath));
       const entries = await Promise.all(
         markdownPaths(tree).map(async (path) => {
           try {
@@ -470,12 +479,32 @@ export function AppShell() {
         openDocument: null,
         openDocuments: [],
         saveStatus: "clean",
-        status: `Encrypted bundle unlocked: ${info.bundleName}.`,
+        status: `Protected bundle unlocked: ${info.bundleName}.`,
       }));
       setSettingsOpen(false);
     },
     [],
   );
+
+  const lockProtectedBundle = useCallback((status = "Protected bundle locked.") => {
+    setEncryptedSession(null);
+    setProtectedUnlockRequest(null);
+    setSelectedImagePath("");
+    setSplitDocument(null);
+    setGraphOpen(false);
+    setGraphDocuments(SAMPLE_DOCS);
+    setState((current) => ({
+      ...current,
+      rootPath: "",
+      tree: null,
+      selectedPath: "",
+      selectedTreePath: "",
+      openDocument: null,
+      openDocuments: [],
+      saveStatus: "clean",
+      status,
+    }));
+  }, []);
 
   const setActiveDocument = useCallback((document: OpenDocumentState, status = "") => {
     expandAncestors(document.path);
@@ -659,7 +688,23 @@ export function AppShell() {
   const openWorkspacePath = useCallback(
     async (path: string, options: { restoreSession?: boolean } = {}) => {
       try {
+        restoreAttemptedRef.current = true;
+        if (isTauriRuntime()) {
+          const probe = await isEncryptedWorkspace(path);
+          if (probe.protected) {
+            setProtectedUnlockRequest({ rootPath: probe.rootPath });
+            setState((current) => ({
+              ...current,
+              status: "This bundle is protected. Enter the passphrase to unlock it.",
+            }));
+            return;
+          }
+        }
         setEncryptedSession(null);
+        setProtectedUnlockRequest(null);
+        setSplitDocument(null);
+        setSelectedImagePath("");
+        setGraphOpen(false);
         const tree = await refreshTree(path);
         await loadGraphDocuments(path, tree);
         const shouldRestoreSession = options.restoreSession ?? true;
@@ -1193,7 +1238,7 @@ export function AppShell() {
       return;
     }
     if (isEncryptedBundle) {
-      setState((current) => ({ ...current, status: "Encrypted bundle structure edits are not available in this alpha." }));
+      setState((current) => ({ ...current, status: "Protected bundle structure edits are not available in this alpha." }));
       return;
     }
     const targetFolder = selectedFolderPath(state.tree, state.selectedTreePath);
@@ -1214,7 +1259,7 @@ export function AppShell() {
       return;
     }
     if (isEncryptedBundle) {
-      setState((current) => ({ ...current, status: "Encrypted bundle structure edits are not available in this alpha." }));
+      setState((current) => ({ ...current, status: "Protected bundle structure edits are not available in this alpha." }));
       return;
     }
     const targetFolder = selectedFolderPath(state.tree, state.selectedTreePath);
@@ -1240,7 +1285,7 @@ export function AppShell() {
       return;
     }
     if (isEncryptedBundle) {
-      setState((current) => ({ ...current, status: "Encrypted bundle structure edits are not available in this alpha." }));
+      setState((current) => ({ ...current, status: "Protected bundle structure edits are not available in this alpha." }));
       return;
     }
     if (!state.selectedTreePath) {
@@ -1298,7 +1343,7 @@ export function AppShell() {
       return;
     }
     if (isEncryptedBundle) {
-      setState((current) => ({ ...current, status: "Encrypted bundle structure edits are not available in this alpha." }));
+      setState((current) => ({ ...current, status: "Protected bundle structure edits are not available in this alpha." }));
       return;
     }
     if (!state.selectedTreePath) {
@@ -1319,7 +1364,7 @@ export function AppShell() {
         return;
       }
       if (isEncryptedBundle) {
-        setState((current) => ({ ...current, status: "Encrypted bundle structure edits are not available in this alpha." }));
+        setState((current) => ({ ...current, status: "Protected bundle structure edits are not available in this alpha." }));
         return;
       }
       try {
@@ -1753,6 +1798,7 @@ export function AppShell() {
             encryptedBundleName={encryptedSession?.bundleName ?? ""}
             encryptedGeneration={encryptedSession?.generation ?? null}
             onUnlock={mountEncryptedWorkspace}
+            onLock={() => lockProtectedBundle()}
           />
         ) : settingsTab === "agent-access" ? (
           <AgentAccessSettings currentBundlePath={state.rootPath} />
@@ -1763,6 +1809,13 @@ export function AppShell() {
         )}
       </SettingsDialog>
       <AboutDialog open={aboutOpen} onClose={() => setAboutOpen(false)} />
+      {protectedUnlockRequest ? (
+        <ProtectedBundleUnlockDialog
+          rootPath={protectedUnlockRequest.rootPath}
+          onCancel={() => setProtectedUnlockRequest(null)}
+          onUnlock={mountEncryptedWorkspace}
+        />
+      ) : null}
       {pathInputRequest ? (
         <div className="mutation-backdrop" role="presentation">
           <form
