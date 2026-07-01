@@ -17,6 +17,10 @@ const tauriEvent = vi.hoisted(() => {
 });
 
 const workspaceApi = vi.hoisted(() => ({
+  createEncryptedWorkspaceFile: vi.fn(() => Promise.resolve({ ok: true, path: "notes/alpha.md", generation: 2, version: 1 })),
+  createEncryptedWorkspaceFolder: vi.fn(() =>
+    Promise.resolve({ ok: true, rootPath: "/tmp/Onyx-Test", bundleName: "Private", generation: 2, documents: ["tables/orders.md"], directories: ["tables", "archive"] }),
+  ),
   createWorkspaceFolder: vi.fn(() => Promise.resolve()),
   createWorkspaceMarkdownFile: vi.fn((_: string, relativePath: string, contents: string) => {
     files.set(relativePath, contents);
@@ -29,18 +33,26 @@ const workspaceApi = vi.hoisted(() => ({
     Promise.resolve({ path: "/tmp/Onyx-Test", name: "Onyx-Test", entries: ["index.md"], projectMarkers: [], okfMarkers: ["index.md"], hasMarkdown: true }),
   ),
   isEncryptedWorkspace: vi.fn(() => Promise.resolve({ protected: false, rootPath: "/tmp/Onyx-Test" })),
-  listEncryptedWorkspace: vi.fn(() => Promise.resolve({ ok: true, rootPath: "/tmp/Onyx-Test", bundleName: "Private", generation: 1, documents: ["tables/orders.md"] })),
+  listEncryptedWorkspace: vi.fn(() =>
+    Promise.resolve({ ok: true, rootPath: "/tmp/Onyx-Test", bundleName: "Private", generation: 2, documents: ["tables/orders.md", "notes/alpha.md"], directories: ["tables", "notes"] }),
+  ),
   isTauriRuntime: vi.fn(() => true),
   listWorkspace: vi.fn(() => Promise.resolve(tree)),
+  moveEncryptedWorkspacePath: vi.fn(() =>
+    Promise.resolve({ ok: true, rootPath: "/tmp/Onyx-Test", bundleName: "Private", generation: 2, documents: ["archive/orders.md"], directories: ["archive"] }),
+  ),
   moveWorkspacePath: vi.fn(() => Promise.resolve()),
-  openEncryptedWorkspace: vi.fn(() => Promise.resolve({ ok: true, rootPath: "/tmp/Onyx-Test", bundleName: "Private", generation: 1, documents: ["tables/orders.md"] })),
-  protectStandardWorkspace: vi.fn(() => Promise.resolve({ ok: true, rootPath: "/tmp/Private", bundleName: "Private", generation: 1, documents: ["tables/orders.md"] })),
+  openEncryptedWorkspace: vi.fn(() => Promise.resolve({ ok: true, rootPath: "/tmp/Onyx-Test", bundleName: "Private", generation: 1, documents: ["tables/orders.md"], directories: ["tables"] })),
+  protectStandardWorkspace: vi.fn(() => Promise.resolve({ ok: true, rootPath: "/tmp/Private", bundleName: "Private", generation: 1, documents: ["tables/orders.md"], directories: ["tables"] })),
   readWorkspaceAsset: vi.fn(() => Promise.reject(new Error("Missing asset"))),
   readEncryptedWorkspaceFile: vi.fn(() => Promise.resolve({ path: "tables/orders.md", contents: "---\ntype: Concept\ntitle: Orders\n---\n\n# Orders\n", generation: 1, version: 1 })),
   readWorkspaceFile: vi.fn((_: string, relativePath: string) => {
     const contents = files.get(relativePath);
     return contents === undefined ? Promise.reject(new Error(`Missing ${relativePath}`)) : Promise.resolve(contents);
   }),
+  renameEncryptedWorkspacePath: vi.fn(() =>
+    Promise.resolve({ ok: true, rootPath: "/tmp/Onyx-Test", bundleName: "Private", generation: 2, documents: ["tables/purchases.md"], directories: ["tables"] }),
+  ),
   renameWorkspacePath: vi.fn(() => Promise.resolve("")),
   revealWorkspacePath: vi.fn(() => Promise.resolve()),
   selectAndImportDrawerImage: vi.fn(() => Promise.resolve(null)),
@@ -48,6 +60,7 @@ const workspaceApi = vi.hoisted(() => ({
   selectWorkspaceDirectory: vi.fn(() => Promise.resolve("/tmp/Onyx-Test")),
   writeExportFile: vi.fn(() => Promise.resolve()),
   writeEncryptedWorkspaceFile: vi.fn(() => Promise.resolve({ ok: true, path: "tables/orders.md", generation: 2, version: 2 })),
+  deleteEncryptedWorkspacePath: vi.fn(() => Promise.resolve({ ok: true, rootPath: "/tmp/Onyx-Test", bundleName: "Private", generation: 2, documents: [], directories: [] })),
   writeWorkspaceFile: vi.fn((_: string, relativePath: string, contents: string) => {
     files.set(relativePath, contents);
     return Promise.resolve();
@@ -230,6 +243,77 @@ describe("AppShell document actions", () => {
     expect(workspaceApi.readEncryptedWorkspaceFile).toHaveBeenCalledWith("/tmp/Onyx-Test", "secret", "tables/orders.md");
     expect(host.textContent).toContain("Protected bundle unlocked: Private.");
   });
+
+  it("creates documents and folders inside an unlocked protected bundle", async () => {
+    const host = await renderProtectedBundle();
+
+    await act(async () => {
+      buttonByLabel(host, "New document").click();
+    });
+    await setDialogValue(host, "notes/alpha");
+    await submitDialog(host);
+
+    expect(workspaceApi.createEncryptedWorkspaceFile).toHaveBeenCalledWith(
+      "/tmp/Onyx-Test",
+      "secret",
+      "notes/alpha.md",
+      expect.stringContaining("New Concept"),
+      1,
+    );
+    await waitFor(() => host.textContent?.includes("alpha.md"));
+
+    await act(async () => {
+      buttonByLabel(host, "New folder").click();
+    });
+    await setDialogValue(host, "archive");
+    await submitDialog(host);
+
+    expect(workspaceApi.createEncryptedWorkspaceFolder).toHaveBeenCalledWith("/tmp/Onyx-Test", "secret", "archive", expect.any(Number));
+    await waitFor(() => host.textContent?.includes("archive"));
+  });
+
+  it("stages protected rename through the encrypted backend", async () => {
+    const host = await renderProtectedBundle();
+
+    await act(async () => {
+      rowByTitle(host, "tables/orders.md").click();
+    });
+    await act(async () => {
+      buttonByLabel(host, "Rename").click();
+    });
+    await setDialogValue(host, "purchases.md");
+    await submitDialog(host);
+
+    await act(async () => {
+      buttonByText(host, "Apply").click();
+    });
+
+    await waitFor(() => workspaceApi.renameEncryptedWorkspacePath.mock.calls.length > 0);
+    expect(workspaceApi.renameEncryptedWorkspacePath).toHaveBeenCalledWith("/tmp/Onyx-Test", "secret", "tables/orders.md", "purchases.md");
+  });
+
+  it("does not expose a redundant protected-bundle unlock button in settings", async () => {
+    const { EncryptedStorageSettings } = await import("../EncryptedStorageSettings");
+    const host = document.createElement("div");
+    document.body.appendChild(host);
+    const root = createRoot(host);
+    await act(async () => {
+      root.render(
+        React.createElement(EncryptedStorageSettings, {
+          currentBundlePath: "/tmp/Standard",
+          encryptedBundlePath: "",
+          encryptedBundleName: "",
+          encryptedGeneration: null,
+          onUnlock: vi.fn(),
+          onLock: vi.fn(),
+        }),
+      );
+    });
+
+    expect(host.textContent).toContain("Create or Protect");
+    expect(host.textContent).toContain("Open existing protected bundles with Open Bundle");
+    expect(findButtonByText(host, "Unlock")).toBeNull();
+  });
 });
 
 async function renderOpenBundle(): Promise<HTMLDivElement> {
@@ -244,6 +328,33 @@ async function renderOpenBundle(): Promise<HTMLDivElement> {
     buttonByLabel(host, "Open Bundle").click();
   });
   await waitFor(() => host.textContent?.includes("Onyx-Test"));
+  return host;
+}
+
+async function renderProtectedBundle(): Promise<HTMLDivElement> {
+  workspaceApi.isEncryptedWorkspace.mockResolvedValueOnce({ protected: true, rootPath: "/tmp/Onyx-Test" });
+  const { AppShell } = await import("../AppShell");
+  const host = document.createElement("div");
+  document.body.appendChild(host);
+  const root = createRoot(host);
+  await act(async () => {
+    root.render(React.createElement(AppShell));
+  });
+  await act(async () => {
+    buttonByLabel(host, "Open Bundle").click();
+  });
+  await waitFor(() => host.textContent?.includes("This bundle is protected"));
+  const passphrase = host.querySelector('.protected-unlock-dialog input[type="password"]');
+  if (!(passphrase instanceof HTMLInputElement)) throw new Error("Passphrase input not found.");
+  await act(async () => {
+    const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    valueSetter?.call(passphrase, "secret");
+    passphrase.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+  await act(async () => {
+    findButtonByText(host, "Unlock")?.click();
+  });
+  await waitFor(() => host.textContent?.includes("Protected bundle unlocked: Private."));
   return host;
 }
 

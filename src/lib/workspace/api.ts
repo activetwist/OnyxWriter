@@ -18,6 +18,7 @@ export interface EncryptedWorkspaceInfo {
   generation: number;
   bundleName: string;
   documents: string[];
+  directories: string[];
 }
 
 export interface ProtectedWorkspaceProbe {
@@ -186,6 +187,82 @@ export async function writeEncryptedWorkspaceFile(
     passphrase,
     relativePath,
     contents,
+    expectedGeneration,
+  });
+}
+
+export async function createEncryptedWorkspaceFile(
+  root: string,
+  passphrase: string,
+  relativePath: string,
+  contents: string,
+  expectedGeneration?: number,
+): Promise<EncryptedDocumentWrite> {
+  return invoke<EncryptedDocumentWrite>("create_encrypted_document", {
+    root,
+    passphrase,
+    relativePath,
+    contents,
+    expectedGeneration,
+  });
+}
+
+export async function createEncryptedWorkspaceFolder(
+  root: string,
+  passphrase: string,
+  relativePath: string,
+  expectedGeneration?: number,
+): Promise<EncryptedWorkspaceInfo> {
+  return invoke<EncryptedWorkspaceInfo>("create_encrypted_directory", {
+    root,
+    passphrase,
+    relativePath,
+    expectedGeneration,
+  });
+}
+
+export async function renameEncryptedWorkspacePath(
+  root: string,
+  passphrase: string,
+  relativePath: string,
+  newName: string,
+  expectedGeneration?: number,
+): Promise<EncryptedWorkspaceInfo> {
+  return invoke<EncryptedWorkspaceInfo>("rename_encrypted_path", {
+    root,
+    passphrase,
+    relativePath,
+    newName,
+    expectedGeneration,
+  });
+}
+
+export async function moveEncryptedWorkspacePath(
+  root: string,
+  passphrase: string,
+  relativePath: string,
+  destinationPath: string,
+  expectedGeneration?: number,
+): Promise<EncryptedWorkspaceInfo> {
+  return invoke<EncryptedWorkspaceInfo>("move_encrypted_path", {
+    root,
+    passphrase,
+    relativePath,
+    destinationPath,
+    expectedGeneration,
+  });
+}
+
+export async function deleteEncryptedWorkspacePath(
+  root: string,
+  passphrase: string,
+  relativePath: string,
+  expectedGeneration?: number,
+): Promise<EncryptedWorkspaceInfo> {
+  return invoke<EncryptedWorkspaceInfo>("delete_encrypted_path", {
+    root,
+    passphrase,
+    relativePath,
     expectedGeneration,
   });
 }

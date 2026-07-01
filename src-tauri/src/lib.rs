@@ -8,8 +8,10 @@ use design_system_fs::{
     read_design_system_settings, save_imported_design_system, write_design_system_settings,
 };
 use encrypted_storage::{
+    create_encrypted_directory, create_encrypted_document, delete_encrypted_path,
     encrypted_folder_info, initialize_encrypted_folder, is_encrypted_folder, list_encrypted_folder,
-    protect_standard_folder, read_encrypted_document, write_encrypted_document,
+    move_encrypted_path, protect_standard_folder, read_encrypted_document, rename_encrypted_path,
+    write_encrypted_document,
 };
 use okf_fs::{
     create_folder, create_markdown_file, delete_path, directory_has_entries, import_image_asset,
@@ -55,6 +57,11 @@ pub fn run() {
             encrypted_folder_info,
             list_encrypted_folder,
             read_encrypted_document,
+            create_encrypted_document,
+            create_encrypted_directory,
+            rename_encrypted_path,
+            move_encrypted_path,
+            delete_encrypted_path,
             write_encrypted_document
         ])
         .run(tauri::generate_context!())

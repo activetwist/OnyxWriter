@@ -19,8 +19,11 @@ import { ValidationPanel } from "./ValidationPanel";
 import { WorkspaceLauncher } from "./WorkspaceLauncher";
 import { WorkspaceSidebar } from "./WorkspaceSidebar";
 import {
+  createEncryptedWorkspaceFile,
+  createEncryptedWorkspaceFolder,
   createWorkspaceFolder,
   createWorkspaceMarkdownFile,
+  deleteEncryptedWorkspacePath,
   deleteWorkspacePath,
   directoryHasEntries,
   initializeWorkspace,
@@ -29,10 +32,12 @@ import {
   listEncryptedWorkspace,
   isTauriRuntime,
   listWorkspace,
+  moveEncryptedWorkspacePath,
   moveWorkspacePath,
   readEncryptedWorkspaceFile,
   readWorkspaceAsset,
   readWorkspaceFile,
+  renameEncryptedWorkspacePath,
   renameWorkspacePath,
   revealWorkspacePath,
   selectAndImportDrawerImage,
@@ -204,6 +209,29 @@ function encryptedTreeFromInfo(info: EncryptedWorkspaceInfo): WorkspaceEntry {
     reserved: false,
     children: [],
   };
+  const ensureFolder = (folderPath: string) => {
+    const parts = folderPath.split("/").filter(Boolean);
+    let cursor = root;
+    for (let index = 0; index < parts.length; index += 1) {
+      const childPath = parts.slice(0, index + 1).join("/");
+      let child = cursor.children.find((item) => item.path === childPath);
+      if (!child) {
+        child = {
+          name: parts[index],
+          path: childPath,
+          kind: "folder",
+          reserved: false,
+          children: [],
+        };
+        cursor.children.push(child);
+      }
+      cursor = child;
+    }
+    return cursor;
+  };
+  for (const folderPath of (info.directories ?? []).filter(Boolean).sort()) {
+    ensureFolder(folderPath);
+  }
   for (const documentPath of info.documents.filter((path) => path.endsWith(".md")).sort()) {
     const parts = documentPath.split("/").filter(Boolean);
     let cursor = root;
@@ -211,6 +239,10 @@ function encryptedTreeFromInfo(info: EncryptedWorkspaceInfo): WorkspaceEntry {
       const part = parts[index];
       const childPath = parts.slice(0, index + 1).join("/");
       const isFile = index === parts.length - 1;
+      if (!isFile) {
+        cursor = ensureFolder(childPath);
+        continue;
+      }
       let child = cursor.children.find((item) => item.path === childPath);
       if (!child) {
         child = {
@@ -223,7 +255,6 @@ function encryptedTreeFromInfo(info: EncryptedWorkspaceInfo): WorkspaceEntry {
         };
         cursor.children.push(child);
       }
-      if (!isFile) cursor = child;
     }
   }
   return root;
@@ -626,9 +657,14 @@ export function AppShell() {
 
   const refreshDrawerAfterMutation = useCallback(
     async (rootPath: string, selectedPath: string, plan?: DrawerMutationPlan) => {
-      const tree = await refreshTree(rootPath);
-      await refreshManagedIndex(rootPath, tree);
-      const refreshedTree = await refreshTree(rootPath);
+      let refreshedTree: WorkspaceEntry;
+      if (encryptedSession && rootPath === encryptedSession.rootPath) {
+        refreshedTree = (await refreshEncryptedTree(encryptedSession)).tree;
+      } else {
+        const tree = await refreshTree(rootPath);
+        await refreshManagedIndex(rootPath, tree);
+        refreshedTree = await refreshTree(rootPath);
+      }
       const documents = await loadGraphDocuments(rootPath, refreshedTree);
       const nextKnownPaths = new Set(markdownPaths(refreshedTree));
       setState((current) => ({
@@ -660,16 +696,30 @@ export function AppShell() {
       }));
       return refreshedTree;
     },
-    [loadGraphDocuments, refreshManagedIndex, refreshTree],
+    [encryptedSession, loadGraphDocuments, refreshEncryptedTree, refreshManagedIndex, refreshTree],
   );
 
   const repairDrawerLinks = useCallback(async (rootPath: string, documents: Record<string, string>, plan: DrawerMutationPlan) => {
     if (!plan.movedMarkdown.length) return 0;
     let repairedCount = 0;
+    const repairEntries = Object.entries(documents).map(([oldPath, raw]) => {
+      const pathMove = plan.movedMarkdown.find((move) => move.from === oldPath);
+      const newPath = pathMove ? pathMove.to : oldPath.startsWith(`${plan.sourcePath}/`) && plan.targetPath ? oldPath.replace(`${plan.sourcePath}/`, `${plan.targetPath}/`) : oldPath;
+      return { oldPath, newPath, raw };
+    });
+    if (encryptedSession && rootPath === encryptedSession.rootPath) {
+      for (const { oldPath, newPath, raw } of repairEntries) {
+        if (!newPath.endsWith(".md")) continue;
+        const repaired = repairMovedLinksFrom(raw, oldPath, newPath, plan.movedMarkdown);
+        if (repaired === raw) continue;
+        repairedCount += 1;
+        const written = await writeEncryptedWorkspaceFile(rootPath, encryptedSession.passphrase, newPath, repaired);
+        setEncryptedSession((current) => current && current.rootPath === rootPath ? { ...current, generation: written.generation } : current);
+      }
+      return repairedCount;
+    }
     await Promise.all(
-      Object.entries(documents).map(async ([oldPath, raw]) => {
-        const pathMove = plan.movedMarkdown.find((move) => move.from === oldPath);
-        const newPath = pathMove ? pathMove.to : oldPath.startsWith(`${plan.sourcePath}/`) && plan.targetPath ? oldPath.replace(`${plan.sourcePath}/`, `${plan.targetPath}/`) : oldPath;
+      repairEntries.map(async ({ oldPath, newPath, raw }) => {
         if (!newPath.endsWith(".md")) return;
         const repaired = repairMovedLinksFrom(raw, oldPath, newPath, plan.movedMarkdown);
         if (repaired === raw) return;
@@ -678,7 +728,7 @@ export function AppShell() {
       }),
     );
     return repairedCount;
-  }, []);
+  }, [encryptedSession]);
 
   const setSystemFilesVisible = useCallback((visible: boolean) => {
     setShowSystemFiles(visible);
@@ -1214,31 +1264,50 @@ export function AppShell() {
   const performCreateFile = useCallback(async (input: string) => {
     if (!state.rootPath || state.rootPath === SAMPLE_DRAWER_ROOT) return;
     const path = ensureMarkdownPath(input);
+    if (knownPaths.has(path)) throw new Error(`Document already exists: ${path}`);
+    if (encryptedSession && state.rootPath === encryptedSession.rootPath) {
+      const written = await createEncryptedWorkspaceFile(
+        state.rootPath,
+        encryptedSession.passphrase,
+        path,
+        defaultConceptContents("Concept", "New Concept"),
+        encryptedSession.generation,
+      );
+      const info = await listEncryptedWorkspace(state.rootPath, encryptedSession.passphrase);
+      setEncryptedSession((current) => current && current.rootPath === state.rootPath ? { ...current, generation: info.generation || written.generation } : current);
+      setState((current) => (current.rootPath === state.rootPath ? { ...current, tree: encryptedTreeFromInfo(info) } : current));
+      await selectPath(path);
+      return;
+    }
     await createWorkspaceMarkdownFile(state.rootPath, path, defaultConceptContents("Concept", "New Concept"));
     const tree = await refreshTree(state.rootPath);
     await refreshManagedIndex(state.rootPath, tree);
     await refreshTree(state.rootPath);
     await selectPath(path);
-  }, [refreshManagedIndex, refreshTree, selectPath, state.rootPath]);
+  }, [encryptedSession, knownPaths, refreshManagedIndex, refreshTree, selectPath, state.rootPath]);
 
   const performCreateFolder = useCallback(async (input: string) => {
     if (!state.rootPath || state.rootPath === SAMPLE_DRAWER_ROOT) return;
     const path = normalizeWorkspacePath(input);
     if (!path) throw new Error("Folder path is required.");
+    if (encryptedSession && state.rootPath === encryptedSession.rootPath) {
+      const info = await createEncryptedWorkspaceFolder(state.rootPath, encryptedSession.passphrase, path, encryptedSession.generation);
+      const tree = encryptedTreeFromInfo(info);
+      setEncryptedSession((current) => current && current.rootPath === state.rootPath ? { ...current, generation: info.generation } : current);
+      setState((current) => (current.rootPath === state.rootPath ? { ...current, tree, selectedTreePath: path, status: `Created folder ${path}.` } : current));
+      expandAncestors(path);
+      return;
+    }
     await createWorkspaceFolder(state.rootPath, path);
     const tree = await refreshTree(state.rootPath);
     await refreshManagedIndex(state.rootPath, tree);
     await refreshTree(state.rootPath);
     setState((current) => ({ ...current, selectedTreePath: path, status: `Created folder ${path}.` }));
-  }, [refreshManagedIndex, refreshTree, state.rootPath]);
+  }, [encryptedSession, expandAncestors, refreshManagedIndex, refreshTree, state.rootPath]);
 
   const createFile = useCallback(() => {
     if (!state.rootPath || state.rootPath === SAMPLE_DRAWER_ROOT) {
       setState((current) => ({ ...current, status: "Document actions require a desktop bundle." }));
-      return;
-    }
-    if (isEncryptedBundle) {
-      setState((current) => ({ ...current, status: "Protected bundle structure edits are not available in this alpha." }));
       return;
     }
     const targetFolder = selectedFolderPath(state.tree, state.selectedTreePath);
@@ -1251,15 +1320,11 @@ export function AppShell() {
     });
     setPathInputValue(defaultPath);
     setMutationError("");
-  }, [isEncryptedBundle, state.rootPath, state.selectedTreePath, state.tree]);
+  }, [state.rootPath, state.selectedTreePath, state.tree]);
 
   const createFolder = useCallback(() => {
     if (!state.rootPath || state.rootPath === SAMPLE_DRAWER_ROOT) {
       setState((current) => ({ ...current, status: "Document actions require a desktop bundle." }));
-      return;
-    }
-    if (isEncryptedBundle) {
-      setState((current) => ({ ...current, status: "Protected bundle structure edits are not available in this alpha." }));
       return;
     }
     const targetFolder = selectedFolderPath(state.tree, state.selectedTreePath);
@@ -1272,7 +1337,7 @@ export function AppShell() {
     });
     setPathInputValue(defaultPath);
     setMutationError("");
-  }, [isEncryptedBundle, state.rootPath, state.selectedTreePath, state.tree]);
+  }, [state.rootPath, state.selectedTreePath, state.tree]);
 
   const stageMutation = useCallback((plan: DrawerMutationPlan) => {
     setMutationError("");
@@ -1282,10 +1347,6 @@ export function AppShell() {
   const renameSelected = useCallback(() => {
     if (!state.rootPath || state.rootPath === SAMPLE_DRAWER_ROOT) {
       setState((current) => ({ ...current, status: "Document actions require a desktop bundle." }));
-      return;
-    }
-    if (isEncryptedBundle) {
-      setState((current) => ({ ...current, status: "Protected bundle structure edits are not available in this alpha." }));
       return;
     }
     if (!state.selectedTreePath) {
@@ -1302,7 +1363,7 @@ export function AppShell() {
     });
     setPathInputValue(value);
     setMutationError("");
-  }, [isEncryptedBundle, state.rootPath, state.selectedTreePath]);
+  }, [state.rootPath, state.selectedTreePath]);
 
   const cancelPathInput = useCallback(() => {
     setPathInputRequest(null);
@@ -1342,10 +1403,6 @@ export function AppShell() {
       setState((current) => ({ ...current, status: "Document actions require a desktop bundle." }));
       return;
     }
-    if (isEncryptedBundle) {
-      setState((current) => ({ ...current, status: "Protected bundle structure edits are not available in this alpha." }));
-      return;
-    }
     if (!state.selectedTreePath) {
       setState((current) => ({ ...current, status: "Select a document or folder to delete." }));
       return;
@@ -1355,16 +1412,12 @@ export function AppShell() {
     } catch (error) {
       setState((current) => ({ ...current, status: error instanceof Error ? error.message : String(error) }));
     }
-  }, [isEncryptedBundle, stageMutation, state.rootPath, state.selectedTreePath, state.tree]);
+  }, [stageMutation, state.rootPath, state.selectedTreePath, state.tree]);
 
   const movePath = useCallback(
     (sourcePath: string, destinationFolderPath: string) => {
       if (!state.rootPath || state.rootPath === SAMPLE_DRAWER_ROOT) {
         setState((current) => ({ ...current, status: "Browser preview does not move bundle files." }));
-        return;
-      }
-      if (isEncryptedBundle) {
-        setState((current) => ({ ...current, status: "Protected bundle structure edits are not available in this alpha." }));
         return;
       }
       try {
@@ -1373,7 +1426,7 @@ export function AppShell() {
         setState((current) => ({ ...current, status: error instanceof Error ? error.message : String(error) }));
       }
     },
-    [isEncryptedBundle, stageMutation, state.rootPath, state.tree],
+    [stageMutation, state.rootPath, state.tree],
   );
 
   const applyMutation = useCallback(async () => {
@@ -1381,13 +1434,42 @@ export function AppShell() {
     setMutationBusy(true);
     setMutationError("");
     try {
-      await Promise.all(
-        state.openDocuments
-          .filter((document) => canAutosaveDocument(state.rootPath, document))
-          .map((document) => writeWorkspaceFile(state.rootPath, document.path, document.raw)),
-      );
+      const protectedSession = encryptedSession && state.rootPath === encryptedSession.rootPath ? encryptedSession : null;
+      if (protectedSession) {
+        for (const document of state.openDocuments.filter((item) => canAutosaveDocument(state.rootPath, item))) {
+          const written = await writeEncryptedWorkspaceFile(state.rootPath, protectedSession.passphrase, document.path, document.raw);
+          setEncryptedSession((current) => current && current.rootPath === state.rootPath ? { ...current, generation: written.generation } : current);
+        }
+      } else {
+        await Promise.all(
+          state.openDocuments
+            .filter((document) => canAutosaveDocument(state.rootPath, document))
+            .map((document) => writeWorkspaceFile(state.rootPath, document.path, document.raw)),
+        );
+      }
       const documentsBefore = await loadGraphDocuments(state.rootPath, state.tree);
-      if (pendingMutation.kind === "rename") {
+      if (protectedSession) {
+        let info: EncryptedWorkspaceInfo;
+        if (pendingMutation.kind === "rename") {
+          info = await renameEncryptedWorkspacePath(
+            state.rootPath,
+            protectedSession.passphrase,
+            pendingMutation.sourcePath,
+            pendingMutation.targetPath?.split("/").pop() ?? "",
+          );
+        } else if (pendingMutation.kind === "move") {
+          info = await moveEncryptedWorkspacePath(
+            state.rootPath,
+            protectedSession.passphrase,
+            pendingMutation.sourcePath,
+            parentFolderPath(pendingMutation.targetPath ?? ""),
+          );
+        } else {
+          info = await deleteEncryptedWorkspacePath(state.rootPath, protectedSession.passphrase, pendingMutation.sourcePath);
+        }
+        setEncryptedSession((current) => current && current.rootPath === state.rootPath ? { ...current, generation: info.generation, bundleName: info.bundleName } : current);
+        setState((current) => (current.rootPath === state.rootPath ? { ...current, tree: encryptedTreeFromInfo(info) } : current));
+      } else if (pendingMutation.kind === "rename") {
         await renameWorkspacePath(state.rootPath, pendingMutation.sourcePath, pendingMutation.targetPath?.split("/").pop() ?? "");
       } else if (pendingMutation.kind === "move") {
         await moveWorkspacePath(state.rootPath, pendingMutation.sourcePath, pendingMutation.targetPath ?? "");
@@ -1412,7 +1494,7 @@ export function AppShell() {
     } finally {
       setMutationBusy(false);
     }
-  }, [expandAncestors, loadGraphDocuments, pendingMutation, refreshDrawerAfterMutation, repairDrawerLinks, state.openDocuments, state.rootPath, state.selectedPath, state.tree]);
+  }, [encryptedSession, expandAncestors, loadGraphDocuments, pendingMutation, refreshDrawerAfterMutation, repairDrawerLinks, state.openDocuments, state.rootPath, state.selectedPath, state.tree]);
 
   const previewDesignSystem = useCallback((id: string) => {
     setDesignState((current) => {
@@ -1647,7 +1729,7 @@ export function AppShell() {
         bundleName={activeBundleName}
         tree={state.tree}
         selectedPath={state.selectedTreePath || state.selectedPath}
-        canMutateDocuments={Boolean(state.rootPath && state.rootPath !== SAMPLE_DRAWER_ROOT && !isEncryptedBundle)}
+        canMutateDocuments={Boolean(state.rootPath && state.rootPath !== SAMPLE_DRAWER_ROOT)}
         collapsed={explorerCollapsed}
         collapsedFolders={collapsedFolders}
         allFoldersCollapsed={allFoldersCollapsed}

@@ -91,6 +91,13 @@ pub struct ManifestEntry {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct ManifestDirectoryEntry {
+    kind: String,
+    updated_at: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct Manifest {
     format: String,
     version: u8,
@@ -99,6 +106,8 @@ pub struct Manifest {
     updated_at: String,
     generation: u64,
     documents: BTreeMap<String, ManifestEntry>,
+    #[serde(default)]
+    directories: BTreeMap<String, ManifestDirectoryEntry>,
     assets: BTreeMap<String, ManifestEntry>,
 }
 
@@ -116,6 +125,7 @@ pub struct EncryptedFolderInfo {
     generation: u64,
     bundle_name: String,
     documents: Vec<String>,
+    directories: Vec<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -211,6 +221,7 @@ pub fn initialize_encrypted_folder(
         updated_at: now,
         generation: 1,
         documents: BTreeMap::new(),
+        directories: BTreeMap::new(),
         assets: BTreeMap::new(),
     };
     manifest = put_document(
@@ -387,10 +398,296 @@ pub fn write_encrypted_document(
     })
 }
 
+#[tauri::command]
+pub fn create_encrypted_document(
+    root: String,
+    passphrase: String,
+    relative_path: String,
+    contents: String,
+    expected_generation: Option<u64>,
+) -> Result<EncryptedDocumentWrite, String> {
+    let session = open_session(&root, &passphrase)?;
+    ensure_generation(&session.manifest, expected_generation)?;
+    let clean_path = clean_relative_path(&relative_path, true)?;
+    if session.manifest.documents.contains_key(&clean_path) {
+        return Err(format!("encrypted document already exists: {clean_path}"));
+    }
+    if directory_exists(&session.manifest, &clean_path) {
+        return Err(format!(
+            "folder already exists at document path: {clean_path}"
+        ));
+    }
+    let mut manifest = put_document(
+        &session.root_path,
+        &session.data_key,
+        session.manifest,
+        &clean_path,
+        &contents,
+        1,
+    )?;
+    manifest.generation += 1;
+    manifest.updated_at = iso_now();
+    publish_manifest(&session.root_path, &session.data_key, &manifest)?;
+    Ok(EncryptedDocumentWrite {
+        ok: true,
+        path: clean_path,
+        generation: manifest.generation,
+        version: 1,
+    })
+}
+
+#[tauri::command]
+pub fn create_encrypted_directory(
+    root: String,
+    passphrase: String,
+    relative_path: String,
+    expected_generation: Option<u64>,
+) -> Result<EncryptedFolderInfo, String> {
+    let session = open_session(&root, &passphrase)?;
+    ensure_generation(&session.manifest, expected_generation)?;
+    let clean_path = clean_directory_path(&relative_path)?;
+    if session.manifest.documents.contains_key(&clean_path) {
+        return Err(format!(
+            "document already exists at folder path: {clean_path}"
+        ));
+    }
+    if session.manifest.directories.contains_key(&clean_path) {
+        return Err(format!("encrypted folder already exists: {clean_path}"));
+    }
+    let mut manifest = session.manifest;
+    ensure_directory_path(&mut manifest, &clean_path);
+    manifest.generation += 1;
+    manifest.updated_at = iso_now();
+    publish_manifest(&session.root_path, &session.data_key, &manifest)?;
+    info_from_manifest(&session.root_path, manifest)
+}
+
+#[tauri::command]
+pub fn rename_encrypted_path(
+    root: String,
+    passphrase: String,
+    relative_path: String,
+    new_name: String,
+    expected_generation: Option<u64>,
+) -> Result<EncryptedFolderInfo, String> {
+    let session = open_session(&root, &passphrase)?;
+    ensure_generation(&session.manifest, expected_generation)?;
+    let source_path = clean_relative_path(&relative_path, false)?;
+    let name = clean_name_segment(&new_name)?;
+    let target_path = join_path(&parent_path(&source_path), &name);
+    mutate_encrypted_path(session, source_path, target_path, false)
+}
+
+#[tauri::command]
+pub fn move_encrypted_path(
+    root: String,
+    passphrase: String,
+    relative_path: String,
+    destination_path: String,
+    expected_generation: Option<u64>,
+) -> Result<EncryptedFolderInfo, String> {
+    let session = open_session(&root, &passphrase)?;
+    ensure_generation(&session.manifest, expected_generation)?;
+    let source_path = clean_relative_path(&relative_path, false)?;
+    let destination = clean_optional_directory_path(&destination_path)?;
+    let target_path = join_path(&destination, &basename(&source_path)?);
+    mutate_encrypted_path(session, source_path, target_path, true)
+}
+
+#[tauri::command]
+pub fn delete_encrypted_path(
+    root: String,
+    passphrase: String,
+    relative_path: String,
+    expected_generation: Option<u64>,
+) -> Result<EncryptedFolderInfo, String> {
+    let session = open_session(&root, &passphrase)?;
+    ensure_generation(&session.manifest, expected_generation)?;
+    let source_path = clean_relative_path(&relative_path, false)?;
+    if is_reserved_document_path(&source_path) {
+        return Err("protected system documents cannot be deleted".into());
+    }
+    let mut manifest = session.manifest;
+    if manifest.documents.remove(&source_path).is_none() {
+        if !directory_exists(&manifest, &source_path) {
+            return Err(format!("encrypted path not found: {source_path}"));
+        }
+        let prefix = format!("{source_path}/");
+        manifest
+            .documents
+            .retain(|path, _| !path.starts_with(&prefix));
+        manifest
+            .directories
+            .retain(|path, _| path != &source_path && !path.starts_with(&prefix));
+    }
+    manifest.generation += 1;
+    manifest.updated_at = iso_now();
+    publish_manifest(&session.root_path, &session.data_key, &manifest)?;
+    info_from_manifest(&session.root_path, manifest)
+}
+
 struct Session {
     root_path: PathBuf,
     data_key: [u8; 32],
     manifest: Manifest,
+}
+
+fn ensure_generation(manifest: &Manifest, expected_generation: Option<u64>) -> Result<(), String> {
+    let expected = expected_generation.unwrap_or(manifest.generation);
+    if manifest.generation != expected {
+        return Err(format!(
+            "encrypted manifest conflict: expected generation {expected}, found {}",
+            manifest.generation
+        ));
+    }
+    Ok(())
+}
+
+fn mutate_encrypted_path(
+    session: Session,
+    source_path: String,
+    target_path: String,
+    moving: bool,
+) -> Result<EncryptedFolderInfo, String> {
+    if source_path == target_path {
+        return info_from_manifest(&session.root_path, session.manifest);
+    }
+    if is_reserved_document_path(&source_path) {
+        return Err("protected system documents cannot be renamed or moved".into());
+    }
+    if target_path.is_empty() {
+        return Err("target path is required".into());
+    }
+    if is_descendant_path(&target_path, &source_path) {
+        return Err("folder cannot be moved inside itself".into());
+    }
+
+    let mut manifest = session.manifest;
+    if let Some(entry) = manifest.documents.get(&source_path).cloned() {
+        if !target_path.ends_with(".md") {
+            return Err("encrypted document path must end in .md".into());
+        }
+        let destination_parent = parent_path(&target_path);
+        if moving
+            && !destination_parent.is_empty()
+            && !directory_exists(&manifest, &destination_parent)
+        {
+            return Err(format!(
+                "destination folder not found: {destination_parent}"
+            ));
+        }
+        if manifest.documents.contains_key(&target_path)
+            || directory_exists(&manifest, &target_path)
+        {
+            return Err(format!("encrypted path already exists: {target_path}"));
+        }
+        let contents =
+            read_document_plaintext(&session.root_path, &session.data_key, &source_path, &entry)?;
+        manifest.documents.remove(&source_path);
+        manifest = put_document(
+            &session.root_path,
+            &session.data_key,
+            manifest,
+            &target_path,
+            &contents,
+            entry.version + 1,
+        )?;
+    } else {
+        if !directory_exists(&manifest, &source_path) {
+            return Err(format!("encrypted path not found: {source_path}"));
+        }
+        if target_path.ends_with(".md") {
+            return Err("encrypted folder path must not end in .md".into());
+        }
+        if manifest.documents.contains_key(&target_path)
+            || directory_exists(&manifest, &target_path)
+        {
+            return Err(format!("encrypted path already exists: {target_path}"));
+        }
+        let destination_parent = parent_path(&target_path);
+        if moving
+            && !destination_parent.is_empty()
+            && !directory_exists(&manifest, &destination_parent)
+        {
+            return Err(format!(
+                "destination folder not found: {destination_parent}"
+            ));
+        }
+
+        let moved_documents: Vec<(String, ManifestEntry)> = manifest
+            .documents
+            .iter()
+            .filter(|(path, _)| is_descendant_path(path, &source_path))
+            .map(|(path, entry)| (path.clone(), entry.clone()))
+            .collect();
+        let moved_directories: Vec<(String, ManifestDirectoryEntry)> = manifest
+            .directories
+            .iter()
+            .filter(|(path, _)| *path == &source_path || is_descendant_path(path, &source_path))
+            .map(|(path, entry)| (path.clone(), entry.clone()))
+            .collect();
+
+        for (old_path, _) in &moved_documents {
+            let new_path = replace_prefix(old_path, &source_path, &target_path);
+            if manifest.documents.contains_key(&new_path) {
+                return Err(format!("encrypted document already exists: {new_path}"));
+            }
+        }
+        for (old_path, _) in &moved_directories {
+            let new_path = replace_prefix(old_path, &source_path, &target_path);
+            if manifest.directories.contains_key(&new_path) {
+                return Err(format!("encrypted folder already exists: {new_path}"));
+            }
+        }
+
+        for (old_path, _) in &moved_documents {
+            manifest.documents.remove(old_path);
+        }
+        for (old_path, _) in &moved_directories {
+            manifest.directories.remove(old_path);
+        }
+        for (old_path, entry) in moved_documents {
+            let new_path = replace_prefix(&old_path, &source_path, &target_path);
+            let contents =
+                read_document_plaintext(&session.root_path, &session.data_key, &old_path, &entry)?;
+            manifest = put_document(
+                &session.root_path,
+                &session.data_key,
+                manifest,
+                &new_path,
+                &contents,
+                entry.version + 1,
+            )?;
+        }
+        for (old_path, _) in moved_directories {
+            let new_path = replace_prefix(&old_path, &source_path, &target_path);
+            ensure_directory_path(&mut manifest, &new_path);
+        }
+    }
+    manifest.generation += 1;
+    manifest.updated_at = iso_now();
+    publish_manifest(&session.root_path, &session.data_key, &manifest)?;
+    info_from_manifest(&session.root_path, manifest)
+}
+
+fn read_document_plaintext(
+    root_path: &Path,
+    data_key: &[u8; 32],
+    path: &str,
+    entry: &ManifestEntry,
+) -> Result<String, String> {
+    let object = read_encrypted_object(root_path, &entry.object_id)?;
+    let plaintext = decrypt_bytes(
+        data_key,
+        &object.envelope,
+        &format!("document:{path}:v{}", entry.version),
+    )?;
+    let contents =
+        String::from_utf8(plaintext).map_err(|e| format!("document is not utf-8: {e}"))?;
+    if sha256_hex(contents.as_bytes()) != entry.plaintext_hash {
+        return Err("document hash does not match encrypted manifest".into());
+    }
+    Ok(contents)
 }
 
 fn open_session(root: &str, passphrase: &str) -> Result<Session, String> {
@@ -458,6 +755,7 @@ fn put_document(
     version: u32,
 ) -> Result<Manifest, String> {
     let clean_path = clean_relative_path(relative_path, true)?;
+    ensure_parent_directories(&mut manifest, &clean_path);
     let aad = format!("document:{clean_path}:v{version}");
     let object = write_encrypted_object(root_path, data_key, contents.as_bytes(), &aad)?;
     let now = iso_now();
@@ -635,6 +933,108 @@ fn clean_relative_path(path: &str, markdown_only: bool) -> Result<String, String
     Ok(clean)
 }
 
+fn clean_directory_path(path: &str) -> Result<String, String> {
+    let clean = clean_relative_path(path, false)?;
+    if clean.ends_with(".md") {
+        return Err("encrypted folder path must not end in .md".into());
+    }
+    Ok(clean)
+}
+
+fn clean_optional_directory_path(path: &str) -> Result<String, String> {
+    if path.trim().is_empty() {
+        return Ok(String::new());
+    }
+    clean_directory_path(path)
+}
+
+fn clean_name_segment(name: &str) -> Result<String, String> {
+    let trimmed = name.trim();
+    if trimmed.is_empty() {
+        return Err("name is required".into());
+    }
+    if trimmed == "." || trimmed == ".." || trimmed.contains('/') || trimmed.contains('\\') {
+        return Err("name must be a single path segment".into());
+    }
+    Ok(trimmed.to_string())
+}
+
+fn parent_path(path: &str) -> String {
+    path.rsplit_once('/')
+        .map(|(parent, _)| parent.to_string())
+        .unwrap_or_default()
+}
+
+fn basename(path: &str) -> Result<String, String> {
+    path.rsplit('/')
+        .next()
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
+        .ok_or_else(|| "path name is required".to_string())
+}
+
+fn join_path(parent: &str, name: &str) -> String {
+    if parent.is_empty() {
+        name.to_string()
+    } else {
+        format!("{parent}/{name}")
+    }
+}
+
+fn is_reserved_document_path(path: &str) -> bool {
+    matches!(path, "index.md" | "log.md")
+        || matches!(basename(path).as_deref(), Ok("index.md" | "log.md"))
+}
+
+fn is_descendant_path(path: &str, parent: &str) -> bool {
+    path.starts_with(&format!("{parent}/"))
+}
+
+fn replace_prefix(path: &str, source: &str, target: &str) -> String {
+    if path == source {
+        target.to_string()
+    } else {
+        path.replacen(&format!("{source}/"), &format!("{target}/"), 1)
+    }
+}
+
+fn directory_exists(manifest: &Manifest, path: &str) -> bool {
+    if path.is_empty() {
+        return true;
+    }
+    manifest.directories.contains_key(path)
+        || manifest
+            .documents
+            .keys()
+            .any(|document| is_descendant_path(document, path))
+        || manifest
+            .directories
+            .keys()
+            .any(|directory| is_descendant_path(directory, path))
+}
+
+fn ensure_directory_path(manifest: &mut Manifest, path: &str) {
+    if path.is_empty() {
+        return;
+    }
+    let now = iso_now();
+    let mut current = String::new();
+    for part in path.split('/').filter(|part| !part.is_empty()) {
+        current = join_path(&current, part);
+        manifest
+            .directories
+            .entry(current.clone())
+            .or_insert_with(|| ManifestDirectoryEntry {
+                kind: "directory".into(),
+                updated_at: now.clone(),
+            });
+    }
+}
+
+fn ensure_parent_directories(manifest: &mut Manifest, path: &str) {
+    ensure_directory_path(manifest, &parent_path(path));
+}
+
 fn info_from_manifest(root_path: &Path, manifest: Manifest) -> Result<EncryptedFolderInfo, String> {
     Ok(EncryptedFolderInfo {
         ok: true,
@@ -642,6 +1042,7 @@ fn info_from_manifest(root_path: &Path, manifest: Manifest) -> Result<EncryptedF
         generation: manifest.generation,
         bundle_name: manifest.bundle_name,
         documents: manifest.documents.keys().cloned().collect(),
+        directories: manifest.directories.keys().cloned().collect(),
     })
 }
 
@@ -814,5 +1215,100 @@ mod tests {
         .is_err());
         let _ = fs::remove_dir_all(source);
         let _ = fs::remove_dir_all(target);
+    }
+
+    #[test]
+    fn protected_bundle_supports_directory_and_document_crud() {
+        let dir = std::env::temp_dir().join(format!(
+            "onyx-encrypted-crud-test-{}",
+            SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let root = dir.to_string_lossy().to_string();
+        let info =
+            initialize_encrypted_folder(root.clone(), "secret".into(), Some("Private".into()))
+                .unwrap();
+
+        let folder_info = create_encrypted_directory(
+            root.clone(),
+            "secret".into(),
+            "notes/archive".into(),
+            Some(info.generation),
+        )
+        .unwrap();
+        assert!(folder_info.directories.contains(&"notes".into()));
+        assert!(folder_info.directories.contains(&"notes/archive".into()));
+        assert!(!dir.join("notes").exists());
+
+        let created = create_encrypted_document(
+            root.clone(),
+            "secret".into(),
+            "notes/archive/alpha.md".into(),
+            "---\ntype: Note\ntitle: Alpha\n---\n\n# Alpha\n".into(),
+            Some(folder_info.generation),
+        )
+        .unwrap();
+        assert_eq!(created.path, "notes/archive/alpha.md");
+        assert!(create_encrypted_document(
+            root.clone(),
+            "secret".into(),
+            "notes/archive/alpha.md".into(),
+            "# Duplicate\n".into(),
+            None,
+        )
+        .unwrap_err()
+        .contains("already exists"));
+
+        let renamed = rename_encrypted_path(
+            root.clone(),
+            "secret".into(),
+            "notes/archive/alpha.md".into(),
+            "beta.md".into(),
+            None,
+        )
+        .unwrap();
+        assert!(renamed.documents.contains(&"notes/archive/beta.md".into()));
+        assert!(read_encrypted_document(
+            root.clone(),
+            "secret".into(),
+            "notes/archive/beta.md".into()
+        )
+        .unwrap()
+        .contents
+        .contains("# Alpha"));
+
+        let moved = move_encrypted_path(
+            root.clone(),
+            "secret".into(),
+            "notes/archive".into(),
+            "".into(),
+            None,
+        )
+        .unwrap();
+        assert!(moved.documents.contains(&"archive/beta.md".into()));
+        assert!(moved.directories.contains(&"archive".into()));
+        assert!(
+            read_encrypted_document(root.clone(), "secret".into(), "archive/beta.md".into())
+                .unwrap()
+                .contents
+                .contains("# Alpha")
+        );
+
+        let deleted =
+            delete_encrypted_path(root.clone(), "secret".into(), "archive".into(), None).unwrap();
+        assert!(!deleted.documents.contains(&"archive/beta.md".into()));
+        assert!(!deleted.directories.contains(&"archive".into()));
+        assert!(
+            read_encrypted_document(root.clone(), "secret".into(), "archive/beta.md".into())
+                .is_err()
+        );
+        assert!(
+            delete_encrypted_path(root.clone(), "secret".into(), "index.md".into(), None)
+                .unwrap_err()
+                .contains("system documents")
+        );
+        let _ = fs::remove_dir_all(dir);
     }
 }

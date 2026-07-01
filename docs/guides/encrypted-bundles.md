@@ -1,6 +1,6 @@
 # Protected Bundles Guide
 
-Protected bundle storage is experimental in the `v0.1.12-alpha` line. Keep recoverable backups until the feature graduates from alpha.
+Protected bundle storage is experimental in the `v0.1.13-alpha` line. Keep recoverable backups until the feature graduates from alpha.
 
 ## What It Does
 
@@ -17,6 +17,9 @@ The desktop app can:
 - Prompt for the passphrase before documents, tabs, search, validation, or graph data are mounted.
 - Lock a protected bundle from Settings, clearing session passphrase state and decrypted document state.
 - Create a protected copy of the current standard bundle into an empty destination folder.
+- Create, rename, move, and delete protected Markdown documents and protected folders after the bundle is unlocked.
+
+Existing protected bundles are opened from the normal Open Bundle flow. Settings creates new protected bundles, creates protected copies, and locks the active protected bundle.
 
 The protected-copy workflow leaves the original standard bundle unchanged for alpha safety. Verify the protected copy before archiving or deleting the source bundle.
 
@@ -85,7 +88,6 @@ A future dumb host should provide only blob/object storage, version pointers, co
 - Metadata leakage is reduced, not eliminated.
 - Provider atomicity varies.
 - Conflicts are detected, not automatically merged.
-- Desktop UI can create, unlock, open, edit, save, and refresh protected documents.
+- Desktop UI can create, open, edit, save, refresh, rename, move, and delete protected documents and folders after unlock.
 - Protected-copy creation currently copies Markdown documents into the protected folder. Asset encryption is deferred.
-- Structure mutations are deferred for protected bundles.
 - No Onyx-hosted remote service exists in this milestone.

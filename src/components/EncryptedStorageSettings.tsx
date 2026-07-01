@@ -2,7 +2,6 @@ import { useState } from "react";
 import { FolderOpen, LockKeyhole, LogOut, Plus, ShieldCheck } from "lucide-react";
 import {
   initializeEncryptedWorkspace,
-  openEncryptedWorkspace,
   protectStandardWorkspace,
   selectWorkspaceDirectory,
   type EncryptedWorkspaceInfo,
@@ -57,26 +56,6 @@ export function EncryptedStorageSettings({
     }
   }
 
-  async function unlockEncryptedBundle() {
-    if (!root || !passphrase) {
-      setError("Choose a protected bundle folder and enter its passphrase.");
-      return;
-    }
-    setBusy(true);
-    setError("");
-    setStatus("Unlocking protected bundle.");
-    try {
-      const info = await openEncryptedWorkspace(root, passphrase);
-      onUnlock(info, passphrase);
-      setStatus(`Protected bundle unlocked: ${info.bundleName}.`);
-    } catch (error) {
-      setError(error instanceof Error ? error.message : String(error));
-      setStatus("");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   async function protectCurrentBundle() {
     if (!currentBundlePath) {
       setError("Open a standard bundle before creating a protected copy.");
@@ -117,8 +96,9 @@ export function EncryptedStorageSettings({
       <section className="settings-section encrypted-open-panel">
         <h3>
           <ShieldCheck size={16} />
-          <span>Open or Create</span>
+          <span>Create or Protect</span>
         </h3>
+        <p>Open existing protected bundles with Open Bundle. Onyx Writer will prompt for the passphrase before mounting the bundle.</p>
         <label className="settings-field">
           <span>Protected folder</span>
           <div className="settings-field-row">
@@ -139,15 +119,11 @@ export function EncryptedStorageSettings({
             type="password"
             value={passphrase}
             onChange={(event) => setPassphrase(event.currentTarget.value)}
-            placeholder="Required to unlock this session"
+            placeholder="Required to create or protect"
           />
         </label>
         <div className="drawer-actions">
-          <button className="primary-action" type="button" onClick={unlockEncryptedBundle} disabled={busy}>
-            <FolderOpen size={16} />
-            <span>Unlock</span>
-          </button>
-          <button className="open-button" type="button" onClick={createEncryptedBundle} disabled={busy}>
+          <button className="primary-action" type="button" onClick={createEncryptedBundle} disabled={busy}>
             <Plus size={16} />
             <span>Create</span>
           </button>
