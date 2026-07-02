@@ -1843,10 +1843,10 @@ export function AppShell() {
             onOpenRecent={openWorkspacePath}
           />
         )}
-        <div className="status-line">
+        <div className="status-line" role="status" aria-live="polite" data-testid="app-status-line">
           <span className="status-line-message">{state.status}</span>
           {activeDocumentStats ? (
-            <span className="status-line-metrics" aria-label="Active document statistics">
+            <span className="status-line-metrics" aria-label="Active document statistics" data-testid="document-status-metrics">
               {formatDocumentStatusStats(activeDocumentStats)}
             </span>
           ) : null}

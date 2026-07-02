@@ -105,7 +105,13 @@ describe("AppShell document status stats", () => {
 
     await waitFor(() => host.querySelector('[aria-label="Active document statistics"]')?.textContent?.includes("Links In: 1"));
 
-    expect(host.querySelector('[aria-label="Active document statistics"]')?.textContent).toBe("Links In: 1 | Links Out: 1 | Words: 3 | Characters: 24");
+    const statusLine = host.querySelector('[data-testid="app-status-line"]');
+    const metrics = host.querySelector('[data-testid="document-status-metrics"]');
+
+    expect(statusLine?.parentElement?.classList.contains("main-column")).toBe(true);
+    expect(statusLine?.lastElementChild).toBe(metrics);
+    expect(metrics?.classList.contains("status-line-metrics")).toBe(true);
+    expect(metrics?.textContent).toBe("Links In: 1 | Links Out: 1 | Words: 3 | Characters: 24");
 
     await unmount(root);
   });

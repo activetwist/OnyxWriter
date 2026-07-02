@@ -434,8 +434,8 @@ button {
 }
 
 .main-column {
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) 28px;
+  display: flex;
+  flex-direction: column;
   min-width: 0;
   height: 100vh;
   min-height: 0;
@@ -443,7 +443,7 @@ button {
 }
 
 .main-column.no-tabs {
-  grid-template-rows: auto minmax(0, 1fr) 28px;
+  display: flex;
 }
 
 .document-tabs {
@@ -720,6 +720,7 @@ button {
 
 .workbench {
   display: grid;
+  flex: 1 1 auto;
   grid-template-columns: minmax(0, 1fr) minmax(240px, 300px);
   min-height: 0;
   overflow: hidden;
@@ -1057,6 +1058,7 @@ button {
 
 .workspace-launcher {
   display: grid;
+  flex: 1 1 auto;
   min-height: 0;
   background: var(--ow-surface);
   padding: 44px 28px;
@@ -1231,14 +1233,19 @@ button {
 
 .status-line {
   display: flex;
+  box-sizing: border-box;
+  flex: 0 0 32px;
   align-items: center;
   gap: var(--ow-space-md);
   min-width: 0;
+  min-height: 32px;
   border-top: 1px solid var(--ow-border);
   background: var(--ow-surface);
   color: var(--ow-text-muted);
   font-size: var(--ow-type-xs);
-  padding: 6px 14px;
+  padding: 0 14px;
+  position: relative;
+  z-index: 30;
 }
 
 .status-line-message {
