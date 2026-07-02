@@ -1230,11 +1230,40 @@ button {
 }
 
 .status-line {
+  display: flex;
+  align-items: center;
+  gap: var(--ow-space-md);
+  min-width: 0;
   border-top: 1px solid var(--ow-border);
   background: var(--ow-surface);
   color: var(--ow-text-muted);
   font-size: var(--ow-type-xs);
   padding: 6px 14px;
+}
+
+.status-line-message {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.status-line-metrics {
+  min-width: 0;
+  max-width: min(58vw, 660px);
+  margin-left: auto;
+  overflow: hidden;
+  color: var(--ow-text-muted);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .status-line-metrics {
+    display: none;
+  }
 }
 
 .settings-backdrop {

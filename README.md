@@ -6,13 +6,14 @@ The app also includes a JSONM design-system runtime. JSONM definitions are valid
 
 ## Status
 
-Onyx Writer `0.1.13-alpha` is the current public alpha release. It is useful for testing local OKF bundle editing now, but it should still be treated as early software. Keep backups of important bundles and expect the OKF support surface to evolve as the format and editor mature.
+Onyx Writer `0.1.14-alpha` is the current public alpha release. It is useful for testing local OKF bundle editing now, but it should still be treated as early software. Keep backups of important bundles and expect the OKF support surface to evolve as the format and editor mature.
 
 ## Features
 
 - Visual and raw editing modes for OKF Markdown documents.
 - Flat-file bundle storage with no document database.
 - Multi-document tabs, autosave, validation feedback, and document tree management.
+- Active document status metrics for inbound links, outbound links, words, and visible-text characters.
 - Local Mermaid rendering with zoom, pan, fit, and reset controls.
 - Interactive bundle graph with folders, documents, internal links, broken links, local physics, hover focus, and node selection.
 - JSONM-driven app theming with bundled design-system archetypes and local imports.
@@ -22,7 +23,7 @@ Onyx Writer `0.1.13-alpha` is the current public alpha release. It is useful for
 
 ## Downloads
 
-The `v0.1.13-alpha` GitHub release includes:
+The `v0.1.14-alpha` GitHub release includes:
 
 - macOS Apple Silicon DMG
 - macOS updater `.app.tar.gz` archive and signature metadata
@@ -35,7 +36,7 @@ The `v0.1.13-alpha` GitHub release includes:
 
 The macOS app is not signed or notarized yet, so macOS may show a warning on first launch. Linux AppImage builds are not part of this alpha.
 
-`v0.1.1-alpha` was the first updater-enabled release. `v0.1.13-alpha` is intended to be discoverable from prior updater-enabled builds through the signed macOS and Windows updater paths. Linux DEB/RPM packages remain manual update assets. See [docs/release/auto-updates.md](docs/release/auto-updates.md).
+`v0.1.1-alpha` was the first updater-enabled release. `v0.1.14-alpha` is intended to be discoverable from prior updater-enabled builds through the signed macOS and Windows updater paths. Linux DEB/RPM packages remain manual update assets. See [docs/release/auto-updates.md](docs/release/auto-updates.md).
 
 ## Setup
 

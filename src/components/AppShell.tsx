@@ -57,6 +57,7 @@ import { repairMovedLinksFrom } from "../lib/workspace/linkRepair";
 import { findWorkspaceEntry, mutationStatus, planDelete, planMove, planRename, remapSelectedPath, type DrawerMutationPlan } from "../lib/workspace/mutations";
 import { forgetRecentDrawer, loadRecentDrawers, rememberDrawer, type RecentWorkspace } from "../lib/workspace/recentWorkspaces";
 import { buildDrawerGraph } from "../lib/workspace/graph";
+import { documentStatusStats, formatDocumentStatusStats } from "../lib/workspace/documentStats";
 import { assessWorkspaceFolder, joinHostPath, type ProjectRootAssessment } from "../lib/workspace/projectDetection";
 import { analyzeMarkdownCapabilities } from "../lib/editor/markdownCapabilities";
 import {
@@ -372,6 +373,10 @@ export function AppShell() {
     () => buildDrawerGraph(state.tree, graphDocuments, { includeSystemFiles: showSystemFiles }),
     [graphDocuments, showSystemFiles, state.tree],
   );
+  const activeDocumentStats = useMemo(() => {
+    if (graphOpen || selectedImagePath) return null;
+    return documentStatusStats(state.openDocument?.path, state.openDocument?.raw, drawerGraph);
+  }, [drawerGraph, graphOpen, selectedImagePath, state.openDocument?.path, state.openDocument?.raw]);
   const themeCss = useMemo(
     () => (currentDesignSystem ? compileDesignSystemCss(currentDesignSystem, currentAppearanceMode) : ""),
     [currentAppearanceMode, currentDesignSystem],
@@ -1838,7 +1843,14 @@ export function AppShell() {
             onOpenRecent={openWorkspacePath}
           />
         )}
-        <div className="status-line">{state.status}</div>
+        <div className="status-line">
+          <span className="status-line-message">{state.status}</span>
+          {activeDocumentStats ? (
+            <span className="status-line-metrics" aria-label="Active document statistics">
+              {formatDocumentStatusStats(activeDocumentStats)}
+            </span>
+          ) : null}
+        </div>
       </section>
       <SettingsDialog
         open={settingsOpen}
